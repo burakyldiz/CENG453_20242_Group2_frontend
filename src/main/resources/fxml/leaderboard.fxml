@@ -18,11 +18,11 @@
     </top>
     
     <center>
-        <VBox alignment="CENTER" spacing="10">
+        <VBox alignment="CENTER" spacing="10" fx:id="leaderboardContainer">
             <padding>
                 <Insets top="10" right="20" bottom="10" left="20" />
             </padding>
-            <Label text="Leaderboard content will appear here" />
+            <Label fx:id="statusLabel" text="Loading leaderboard data..." style="-fx-text-fill: red;" />
         </VBox>
     </center>
     

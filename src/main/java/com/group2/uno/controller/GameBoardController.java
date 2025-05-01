@@ -68,7 +68,7 @@ public class GameBoardController implements Initializable {
      * Constructor
      */
     public GameBoardController() {
-        this.gameService = new GameService();
+        this.gameService = GameService.getInstance();
     }
 
     /**
@@ -148,12 +148,6 @@ public class GameBoardController implements Initializable {
             if (game.isGameOver()) {
                 Player winner = game.getWinner();
                 showGameOver(winner);
-                
-                List<Long> playerIds = new ArrayList<>();
-                for (Player player : players) {
-                    playerIds.add(player.getId());
-                }
-                gameService.recordGameResult(winner.getId(), playerIds);
             } else {
                 if (!game.getCurrentPlayer().isHuman() && !cpuTurnInProgress) {
                     startCpuTurn();
@@ -395,6 +389,12 @@ public class GameBoardController implements Initializable {
             winnerLabel.setText("You won!");
         } else {
             winnerLabel.setText(winner.getName() + " won!");
+        }
+        
+        // Record game result to backend
+        boolean recorded = gameService.recordGameResult(winner, players);
+        if (!recorded) {
+            System.err.println("Failed to record game result");
         }
     }
 
