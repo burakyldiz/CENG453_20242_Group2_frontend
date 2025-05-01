@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ceng453.frontend.controller.LoginController">
+   <center>
+      <VBox alignment="CENTER" spacing="15.0" BorderPane.alignment="CENTER">
+         <children>
+            <Label text="UNO Game Login" textFill="#e40101">
+               <font>
+                  <Font name="System Bold" size="24.0" />
+               </font>
+            </Label>
+            <HBox alignment="CENTER" spacing="10.0">
+               <children>
+                  <Label prefWidth="100.0" text="Username:" />
+                  <TextField fx:id="usernameField" prefHeight="30.0" prefWidth="200.0" promptText="Enter your username" />
+               </children>
+            </HBox>
+            <HBox alignment="CENTER" spacing="10.0">
+               <children>
+                  <Label prefWidth="100.0" text="Password:" />
+                  <PasswordField fx:id="passwordField" prefHeight="30.0" prefWidth="200.0" promptText="Enter your password" />
+               </children>
+            </HBox>
+            <Label fx:id="statusLabel" textFill="RED">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </Label>
+            <Button fx:id="loginButton" defaultButton="true" mnemonicParsing="false" onAction="#handleLogin" prefHeight="30.0" prefWidth="150.0" style="-fx-background-color: #0066FF;" text="Login" textFill="WHITE">
+               <font>
+                  <Font name="System Bold" size="14.0" />
+               </font>
+            </Button>
+            <HBox alignment="CENTER" spacing="10.0">
+               <children>
+                  <Button fx:id="registerButton" mnemonicParsing="false" onAction="#handleRegister" prefHeight="30.0" prefWidth="150.0" style="-fx-background-color: #00A651;" text="Register" textFill="WHITE">
+                     <font>
+                        <Font size="14.0" />
+                     </font>
+                  </Button>
+                  <Button fx:id="forgotPasswordButton" mnemonicParsing="false" onAction="#handleForgotPassword" prefHeight="30.0" prefWidth="150.0" style="-fx-background-color: #FF9900;" text="Forgot Password" textFill="WHITE">
+                     <font>
+                        <Font size="14.0" />
+                     </font>
+                  </Button>
+               </children>
+            </HBox>
+         </children>
+         <padding>
+            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+         </padding>
+      </VBox>
+   </center>
+</BorderPane>

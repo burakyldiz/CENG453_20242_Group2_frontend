@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane prefHeight="768.0" prefWidth="1024.0" style="-fx-background-color: #1E1E1E;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ceng453.frontend.controller.GameBoardController">
+   <top>
+      <HBox alignment="CENTER" spacing="50.0" BorderPane.alignment="CENTER">
+         <children>
+            <Label fx:id="currentPlayerLabel" text="Current Player: Player" textFill="WHITE">
+               <font>
+                  <Font name="System Bold" size="18.0" />
+               </font>
+            </Label>
+            <Label fx:id="directionLabel" text="Direction: Clockwise" textFill="WHITE">
+               <font>
+                  <Font name="System Bold" size="18.0" />
+               </font>
+            </Label>
+         </children>
+         <BorderPane.margin>
+            <Insets top="10.0" />
+         </BorderPane.margin>
+      </HBox>
+   </top>
+   <center>
+      <VBox alignment="CENTER" BorderPane.alignment="CENTER">
+         <children>
+            <HBox alignment="CENTER" spacing="20.0">
+               <children>
+                  <Label text="CPU 2" textFill="WHITE">
+                     <font>
+                        <Font size="16.0" />
+                     </font>
+                  </Label>
+                  <Circle fx:id="unoIndicatorCPU2" radius="8.0" stroke="BLACK" strokeType="INSIDE" />
+               </children>
+            </HBox>
+            <FlowPane fx:id="cpu2HandPane" alignment="CENTER" hgap="5.0" vgap="5.0">
+               <padding>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </padding>
+            </FlowPane>
+            <HBox alignment="CENTER" spacing="20.0">
+               <children>
+                  <HBox alignment="CENTER" spacing="20.0">
+                     <children>
+                        <Label text="CPU 1" textFill="WHITE">
+                           <font>
+                              <Font size="16.0" />
+                           </font>
+                        </Label>
+                        <Circle fx:id="unoIndicatorCPU1" radius="8.0" stroke="BLACK" strokeType="INSIDE" />
+                     </children>
+                  </HBox>
+                  <FlowPane fx:id="cpu1HandPane" alignment="CENTER" hgap="5.0" prefHeight="100.0" prefWidth="300.0" vgap="5.0">
+                     <padding>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                     </padding>
+                  </FlowPane>
+                  <StackPane fx:id="discardPilePane" prefHeight="150.0" prefWidth="100.0" />
+                  <FlowPane fx:id="cpu3HandPane" alignment="CENTER" hgap="5.0" prefHeight="100.0" prefWidth="300.0" vgap="5.0">
+                     <padding>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                     </padding>
+                  </FlowPane>
+                  <HBox alignment="CENTER" spacing="20.0">
+                     <children>
+                        <Label text="CPU 3" textFill="WHITE">
+                           <font>
+                              <Font size="16.0" />
+                           </font>
+                        </Label>
+                        <Circle fx:id="unoIndicatorCPU3" radius="8.0" stroke="BLACK" strokeType="INSIDE" />
+                     </children>
+                  </HBox>
+               </children>
+               <VBox.margin>
+                  <Insets bottom="20.0" top="20.0" />
+               </VBox.margin>
+            </HBox>
+            <Label fx:id="messageLabel" textFill="#ffb347">
+               <font>
+                  <Font size="16.0" />
+               </font>
+            </Label>
+            <VBox fx:id="colorSelectPane" alignment="CENTER" prefHeight="120.0" prefWidth="100.0" spacing="10.0" style="-fx-background-color: #333333; -fx-background-radius: 10;">
+               <children>
+                  <Label text="Select Color:" textFill="WHITE">
+                     <font>
+                        <Font name="System Bold" size="16.0" />
+                     </font>
+                  </Label>
+                  <HBox alignment="CENTER" spacing="10.0">
+                     <children>
+                        <Button fx:id="redButton" mnemonicParsing="false" onAction="#handleColorSelection" prefHeight="30.0" prefWidth="80.0" style="-fx-background-color: #E40101;" text="Red" textFill="WHITE" />
+                        <Button fx:id="yellowButton" mnemonicParsing="false" onAction="#handleColorSelection" prefHeight="30.0" prefWidth="80.0" style="-fx-background-color: #FFD500;" text="Yellow" textFill="BLACK" />
+                        <Button fx:id="greenButton" mnemonicParsing="false" onAction="#handleColorSelection" prefHeight="30.0" prefWidth="80.0" style="-fx-background-color: #00A651;" text="Green" textFill="WHITE" />
+                        <Button fx:id="blueButton" mnemonicParsing="false" onAction="#handleColorSelection" prefHeight="30.0" prefWidth="80.0" style="-fx-background-color: #0074D9;" text="Blue" textFill="WHITE" />
+                     </children>
+                  </HBox>
+               </children>
+               <padding>
+                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+               </padding>
+            </VBox>
+            <HBox alignment="CENTER" spacing="10.0">
+               <children>
+                  <Label text="Your Hand" textFill="WHITE">
+                     <font>
+                        <Font size="16.0" />
+                     </font>
+                  </Label>
+                  <Circle fx:id="unoIndicatorPlayer" radius="8.0" stroke="BLACK" strokeType="INSIDE" />
+               </children>
+               <VBox.margin>
+                  <Insets top="10.0" />
+               </VBox.margin>
+            </HBox>
+            <FlowPane fx:id="playerHandPane" alignment="CENTER" hgap="5.0" vgap="5.0">
+               <padding>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </padding>
+            </FlowPane>
+         </children>
+      </VBox>
+   </center>
+   <bottom>
+      <HBox alignment="CENTER" spacing="10.0" BorderPane.alignment="CENTER">
+         <children>
+            <Button fx:id="drawCardButton" mnemonicParsing="false" onAction="#handleDrawCard" prefHeight="40.0" prefWidth="120.0" style="-fx-background-color: #0074D9; -fx-background-radius: 5;" text="Draw Card" textFill="WHITE">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </Button>
+            <Button fx:id="unoButton" mnemonicParsing="false" onAction="#handleUno" prefHeight="40.0" prefWidth="80.0" style="-fx-background-color: #E40101; -fx-background-radius: 5;" text="UNO!" textFill="WHITE">
+               <font>
+                  <Font name="System Bold" size="14.0" />
+               </font>
+            </Button>
+            <Button fx:id="backToMenuButton" mnemonicParsing="false" onAction="#handleBackToMenu" prefHeight="40.0" prefWidth="120.0" style="-fx-background-color: #999999; -fx-background-radius: 5;" text="Main Menu" textFill="WHITE">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </Button>
+         </children>
+         <BorderPane.margin>
+            <Insets bottom="10.0" top="10.0" />
+         </BorderPane.margin>
+      </HBox>
+   </bottom>
+   <right>
+      <VBox alignment="CENTER" prefHeight="200.0" prefWidth="120.0" spacing="10.0" BorderPane.alignment="CENTER">
+         <children>
+            <Label text="Cheat Buttons" textFill="WHITE">
+               <font>
+                  <Font name="System Bold" size="14.0" />
+               </font>
+            </Label>
+            <Button fx:id="skipButton" mnemonicParsing="false" prefWidth="100.0" style="-fx-background-color: #FF9900; -fx-background-radius: 5;" text="Skip" textFill="WHITE" />
+            <Button fx:id="reverseButton" mnemonicParsing="false" prefWidth="100.0" style="-fx-background-color: #FF9900; -fx-background-radius: 5;" text="Reverse" textFill="WHITE" />
+            <Button fx:id="drawTwoButton" mnemonicParsing="false" prefWidth="100.0" style="-fx-background-color: #FF9900; -fx-background-radius: 5;" text="Draw Two" textFill="WHITE" />
+            <Button fx:id="wildButton" mnemonicParsing="false" prefWidth="100.0" style="-fx-background-color: #FF9900; -fx-background-radius: 5;" text="Wild" textFill="WHITE" />
+            <Button fx:id="wildDrawFourButton" mnemonicParsing="false" prefWidth="100.0" style="-fx-background-color: #FF9900; -fx-background-radius: 5;" text="Wild Draw 4" textFill="WHITE" />
+         </children>
+         <BorderPane.margin>
+            <Insets right="10.0" />
+         </BorderPane.margin>
+      </VBox>
+   </right>
+</BorderPane>
