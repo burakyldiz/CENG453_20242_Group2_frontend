@@ -4,7 +4,9 @@ import com.ceng453.frontend.model.Card;
 import com.ceng453.frontend.model.Game;
 import com.ceng453.frontend.model.Player;
 import com.ceng453.frontend.ui.SceneManager;
+import javafx.animation.KeyFrame;
 import javafx.animation.PauseTransition;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -560,7 +562,7 @@ public class GameBoardController {
     private void playCPUTurn() {
         System.out.println("CPU turn started. Current player index: " + game.getCurrentPlayerIndex());
         
-        // Use a slight delay to make CPU moves visible
+        // Use a single delay for this CPU's turn, not recursive
         PauseTransition pause = new PauseTransition(Duration.seconds(1));
         pause.setOnFinished(e -> {
             try {
@@ -578,8 +580,22 @@ public class GameBoardController {
                         }
                     }
                     
-                    // Update the UI for the next turn
-                    updateGameUI();
+                    // Force update the discard pile to show the card that was just played
+                    updateDiscardPile();
+                    
+                    // Update all other UI elements
+                    updateCPUHandPane(cpu1HandPane, game.getPlayers().get(1));
+                    updateCPUHandPane(cpu2HandPane, game.getPlayers().get(2));
+                    updateCPUHandPane(cpu3HandPane, game.getPlayers().get(3));
+                    updatePlayerTurnIndicators();
+                    
+                    // If it's still a CPU turn (but different CPU), schedule the next CPU turn
+                    if (!isHumanTurn() && !game.isGameOver()) {
+                        // Schedule another CPU turn after a slight delay
+                        PauseTransition nextCpuTurn = new PauseTransition(Duration.seconds(1));
+                        nextCpuTurn.setOnFinished(event -> playCPUTurn());
+                        nextCpuTurn.play();
+                    }
                 }
             } catch (Exception ex) {
                 System.err.println("Error during CPU turn: " + ex.getMessage());
@@ -587,6 +603,68 @@ public class GameBoardController {
             }
         });
         pause.play();
+    }
+    
+    // Helper method to update turn indicators
+    private void updatePlayerTurnIndicators() {
+        // Reset all turn indicators to dark gray
+        if (unoIndicatorPlayer != null) unoIndicatorPlayer.setFill(Color.DARKGREY);
+        if (unoIndicatorCPU1 != null) unoIndicatorCPU1.setFill(Color.DARKGREY);
+        if (unoIndicatorCPU2 != null) unoIndicatorCPU2.setFill(Color.DARKGREY);
+        if (unoIndicatorCPU3 != null) unoIndicatorCPU3.setFill(Color.DARKGREY);
+        
+        // Set the turn indicator for current player to green
+        switch (game.getCurrentPlayerIndex()) {
+            case 0:
+                if (unoIndicatorPlayer != null) unoIndicatorPlayer.setFill(Color.GREEN);
+                break;
+            case 1:
+                if (unoIndicatorCPU1 != null) unoIndicatorCPU1.setFill(Color.GREEN);
+                break;
+            case 2:
+                if (unoIndicatorCPU2 != null) unoIndicatorCPU2.setFill(Color.GREEN);
+                break;
+            case 3:
+                if (unoIndicatorCPU3 != null) unoIndicatorCPU3.setFill(Color.GREEN);
+                break;
+        }
+        
+        // Add visual indication of whose turn it is with label styling
+        String playerStyle = "-fx-font-weight: normal; -fx-text-fill: white;";
+        String activeStyle = "-fx-font-weight: bold; -fx-text-fill: yellow;";
+        
+        // Reset all styles first
+        if (playerLabel != null) playerLabel.setStyle(playerStyle);
+        if (cpu1Label != null) cpu1Label.setStyle(playerStyle);
+        if (cpu2Label != null) cpu2Label.setStyle(playerStyle);
+        if (cpu3Label != null) cpu3Label.setStyle(playerStyle);
+        
+        // Highlight the active player
+        switch (game.getCurrentPlayerIndex()) {
+            case 0:
+                if (playerLabel != null) playerLabel.setStyle(activeStyle);
+                break;
+            case 1:
+                if (cpu1Label != null) cpu1Label.setStyle(activeStyle); 
+                break;
+            case 2:
+                if (cpu2Label != null) cpu2Label.setStyle(activeStyle);
+                break;
+            case 3:
+                if (cpu3Label != null) cpu3Label.setStyle(activeStyle);
+                break;
+        }
+        
+        // Update current player label
+        if (currentPlayerLabel != null) {
+            Player currentPlayer = game.getPlayers().get(game.getCurrentPlayerIndex());
+            currentPlayerLabel.setText("Current Player: " + currentPlayer.getName());
+        }
+        
+        // Update direction indicator
+        if (directionLabel != null) {
+            directionLabel.setText("Direction: " + (game.isClockwise() ? "Clockwise" : "Counter-Clockwise"));
+        }
     }
     
     private boolean isHumanTurn() {
