@@ -127,6 +127,12 @@ public class Game {
         // Handle action cards
         handleActionCard(card);
         
+        // If the card was not an action card, move to the next player
+        // Action cards (SKIP, REVERSE, DRAW_TWO, WILD_DRAW_FOUR) already handle turn advancement
+        if (card.getType() == Card.Type.NUMBER) {
+            moveToNextPlayer();
+        }
+        
         return true;
     }
     
