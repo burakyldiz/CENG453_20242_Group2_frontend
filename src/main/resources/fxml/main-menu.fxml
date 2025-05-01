@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.text.Text?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml/1"
+            xmlns="http://javafx.com/javafx/17"
+            fx:controller="com.group2.uno.controller.MainMenuController"
+            stylesheets="/css/styles.css">
+    <top>
+        <HBox alignment="CENTER_RIGHT" spacing="10">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10" />
+            </padding>
+            
+            <Label fx:id="usernameLabel" styleClass="user-label" />
+            <Button text="Logout" onAction="#handleLogout" styleClass="small-button" />
+        </HBox>
+    </top>
+    
+    <center>
+        <VBox alignment="CENTER" spacing="20">
+            <padding>
+                <Insets top="20" right="20" bottom="20" left="20" />
+            </padding>
+            
+            <Text styleClass="title-text" text="UNO Card Game" />
+            
+            <VBox spacing="15" alignment="CENTER" styleClass="menu-box">
+                <Button text="Single Player Game" onAction="#handleSinglePlayerGame" styleClass="menu-button" />
+                <Button text="Multiplayer Game" onAction="#handleMultiplayerGame" styleClass="menu-button" />
+                <Button text="Leaderboards" onAction="#handleLeaderboards" styleClass="menu-button" />
+                <Button text="How to Play" onAction="#handleHowToPlay" styleClass="menu-button" />
+                <Button text="Exit" onAction="#handleExit" styleClass="menu-button" />
+            </VBox>
+        </VBox>
+    </center>
+</BorderPane>

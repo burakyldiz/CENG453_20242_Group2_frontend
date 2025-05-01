@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.text.Text?>
+
+<BorderPane fx:controller="com.group2.uno.controller.LoginController"
+            xmlns:fx="http://javafx.com/fxml/1"
+            xmlns="http://javafx.com/javafx/17"
+            stylesheets="/css/styles.css">
+    <center>
+        <VBox alignment="CENTER" spacing="15" maxWidth="400">
+            <padding>
+                <Insets top="20" right="20" bottom="20" left="20" />
+            </padding>
+            
+            <Text styleClass="title-text" text="UNO Card Game" />
+            <Text styleClass="subtitle-text" text="Login to start playing" />
+            
+            <GridPane vgap="10" hgap="10">
+                <columnConstraints>
+                    <ColumnConstraints hgrow="SOMETIMES" minWidth="100" />
+                    <ColumnConstraints hgrow="SOMETIMES" minWidth="200" />
+                </columnConstraints>
+                
+                <Label text="Username:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                <TextField fx:id="usernameField" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                
+                <Label text="Password:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                <PasswordField fx:id="passwordField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+            </GridPane>
+            
+            <HBox spacing="10" alignment="CENTER">
+                <Button text="Login" onAction="#handleLogin" styleClass="primary-button" />
+                <Button text="Register" onAction="#handleRegisterNavigation" styleClass="secondary-button" />
+            </HBox>
+            
+            <Hyperlink text="Forgot password?" onAction="#handleForgotPassword" />
+            
+            <Label fx:id="errorLabel" styleClass="error-text" />
+        </VBox>
+    </center>
+</BorderPane>

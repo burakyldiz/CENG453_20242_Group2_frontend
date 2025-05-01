@@ -1,0 +1,270 @@
+.background {
+    -fx-background-color: linear-gradient(to bottom, #1a3040, #2c5364);
+}
+
+.game-background {
+    -fx-background-color: #0a2e38;
+}
+
+.title-text {
+    -fx-font-size: 36px;
+    -fx-font-weight: bold;
+    -fx-fill: white;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 5, 0, 0, 1);
+}
+
+.subtitle-text {
+    -fx-font-size: 18px;
+    -fx-fill: #cccccc;
+}
+
+.error-text {
+    -fx-text-fill: #ff6b6b;
+    -fx-font-weight: bold;
+}
+
+/* Button Styles */
+.primary-button {
+    -fx-background-color: #ff9a3c;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 10 20;
+    -fx-background-radius: 5;
+    -fx-cursor: hand;
+}
+
+.primary-button:hover {
+    -fx-background-color: #ffb366;
+}
+
+.secondary-button {
+    -fx-background-color: #3d6a80;
+    -fx-text-fill: white;
+    -fx-padding: 10 20;
+    -fx-background-radius: 5;
+    -fx-cursor: hand;
+}
+
+.secondary-button:hover {
+    -fx-background-color: #4d7a90;
+}
+
+.small-button {
+    -fx-background-color: #3d6a80;
+    -fx-text-fill: white;
+    -fx-padding: 5 10;
+    -fx-background-radius: 3;
+    -fx-cursor: hand;
+}
+
+.small-button:hover {
+    -fx-background-color: #4d7a90;
+}
+
+/* Login and Registration Styles */
+TextField, PasswordField {
+    -fx-background-color: rgba(150, 89, 89, 0.9);
+    -fx-background-radius: 3;
+    -fx-padding: 8;
+}
+
+Label {
+    -fx-text-fill: rgb(148, 86, 86);
+}
+
+Hyperlink {
+    -fx-text-fill: #a1c6ea;
+}
+
+Hyperlink:hover {
+    -fx-text-fill: #7fbce5;
+}
+
+/* Main Menu Styles */
+.menu-box {
+    -fx-background-color: rgba(0, 0, 0, 0.2);
+    -fx-background-radius: 10;
+    -fx-padding: 20;
+}
+
+.menu-button {
+    -fx-background-color: #ff9a3c;
+    -fx-text-fill: rgb(12, 6, 6);
+    -fx-font-weight: bold;
+    -fx-padding: 15 30;
+    -fx-background-radius: 5;
+    -fx-cursor: hand;
+    -fx-min-width: 250;
+}
+
+.menu-button:hover {
+    -fx-background-color: #ffb366;
+}
+
+.user-label {
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+
+/* Game Board Styles */
+.player-label {
+    -fx-font-weight: bold;
+    -fx-font-size: 16px;
+    -fx-text-fill: rgb(20, 16, 16);
+}
+
+.current-turn-label {
+    -fx-font-weight: bold;
+    -fx-font-size: 18px;
+    -fx-text-fill: #ff9a3c;
+}
+
+.uno-indicator {
+    -fx-fill: transparent;
+    -fx-stroke: red;
+    -fx-stroke-width: 2;
+}
+
+.uno-indicator:visible {
+    -fx-fill: red;
+}
+
+.uno-label {
+    -fx-font-weight: bold;
+    -fx-text-fill: red;
+    -fx-font-size: 14px;
+    -fx-opacity: 0.7;
+}
+
+.uno-button {
+    -fx-background-color: red;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 8 15;
+    -fx-background-radius: 5;
+    -fx-cursor: hand;
+}
+
+.uno-button:hover {
+    -fx-background-color: #ff5555;
+}
+
+.game-message {
+    -fx-font-size: 16px;
+    -fx-text-fill: white;
+    -fx-padding: 5;
+    -fx-background-color: rgba(0, 0, 0, 0.3);
+    -fx-background-radius: 5;
+}
+
+.color-selection-box {
+    -fx-background-color: rgba(0, 0, 0, 0.8);
+    -fx-background-radius: 10;
+    -fx-padding: 20;
+}
+
+.color-button {
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+    -fx-padding: 10 20;
+    -fx-background-radius: 5;
+    -fx-cursor: hand;
+}
+
+.red-button {
+    -fx-background-color: #ff5555;
+}
+
+.red-button:hover {
+    -fx-background-color: #ff7777;
+}
+
+.green-button {
+    -fx-background-color: #55aa55;
+}
+
+.green-button:hover {
+    -fx-background-color: #77cc77;
+}
+
+.blue-button {
+    -fx-background-color: #5555ff;
+}
+
+.blue-button:hover {
+    -fx-background-color: #7777ff;
+}
+
+.yellow-button {
+    -fx-background-color: #ffaa00;
+}
+
+.yellow-button:hover {
+    -fx-background-color: #ffcc00;
+}
+
+.cheat-button {
+    -fx-background-color: #9c27b0;
+    -fx-text-fill: white;
+    -fx-padding: 5 10;
+    -fx-background-radius: 3;
+    -fx-cursor: hand;
+    -fx-font-size: 10px;
+}
+
+.cheat-button:hover {
+    -fx-background-color: #b239c8;
+}
+
+.game-over-box {
+    -fx-background-color: rgba(0, 0, 0, 0.8);
+    -fx-background-radius: 10;
+    -fx-padding: 30;
+}
+
+.game-over-label {
+    -fx-font-size: 36px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.winner-label {
+    -fx-font-size: 24px;
+    -fx-text-fill: #ff9a3c;
+    -fx-font-weight: bold;
+}
+
+/* Leaderboard Styles */
+.tab-button {
+    -fx-background-color: #3d6a80;
+    -fx-text-fill: white;
+    -fx-padding: 8 15;
+    -fx-background-radius: 5 5 0 0;
+    -fx-cursor: hand;
+}
+
+.tab-button:hover {
+    -fx-background-color: #4d7a90;
+}
+
+.tab-button:pressed {
+    -fx-background-color: #ff9a3c;
+}
+
+.table-view {
+    -fx-background-color: rgba(255, 255, 255, 0.9);
+}
+
+.table-view .column-header {
+    -fx-background-color: #ff9a3c;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+.table-row-cell:odd {
+    -fx-background-color: rgba(0, 0, 0, 0.05);
+}
+
+.table-row-cell:selected {
+    -fx-background-color: #ff9a3c;
+}

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.group2.uno.controller.HelloController"
+            stylesheets="/css/styles.css">
+    <center>
+        <VBox alignment="CENTER" spacing="20">
+            <padding>
+                <Insets top="20" right="20" bottom="20" left="20" />
+            </padding>
+            <Label fx:id="welcomeLabel" styleClass="title-text" />
+            <Label text="Basic JavaFX Integration with Spring Boot" />
+        </VBox>
+    </center>
+</BorderPane>
