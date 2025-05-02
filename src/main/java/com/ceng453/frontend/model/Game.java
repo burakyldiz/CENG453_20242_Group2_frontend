@@ -578,4 +578,17 @@ public class Game {
     public boolean isChallengeActive() {
         return isChallengeActive;
     }
+    
+    public void resetDrawFourCounter() {
+        this.drawFourCounter = 0;
+    }
+    
+    public void resetDrawTwoCounter() {
+        this.drawTwoCounter = 0;
+    }
+    
+    // Make deck accessible for direct draw operations
+    public Deck getDeck() {
+        return deck;
+    }
 }

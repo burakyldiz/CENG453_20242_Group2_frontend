@@ -27,6 +27,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
+import javafx.stage.Stage;
 import javafx.util.Duration;
 import org.springframework.stereotype.Controller;
 
@@ -74,6 +75,7 @@ public class GameBoardController {
     @FXML private Label cpu1Label;
     @FXML private Label cpu2Label;
     @FXML private Label cpu3Label;
+    @FXML private Button fullscreenButton;
     
     public GameBoardController(SceneManager sceneManager) {
         this.sceneManager = sceneManager;
@@ -506,7 +508,47 @@ public class GameBoardController {
         }
         
         if (isHumanTurn()) {
-            // Draw a card from the deck
+            // Check if there's a Draw Four counter active
+            if (game.getDrawFourCounter() > 0) {
+                int cardsToDraw = game.getDrawFourCounter();
+                showMessage("You must draw " + cardsToDraw + " cards!");
+                
+                // Draw the required cards
+                for (int i = 0; i < cardsToDraw; i++) {
+                    Card drawnCard = game.getDeck().drawCard();
+                    if (drawnCard != null) {
+                        game.getPlayers().get(0).addCard(drawnCard);
+                    }
+                }
+                
+                // Reset the counter and move to next player
+                game.resetDrawFourCounter();
+                game.moveToNextPlayer();
+                updateGameUI();
+                return;
+            }
+            
+            // Check if there's a Draw Two counter active
+            if (game.getDrawTwoCounter() > 0) {
+                int cardsToDraw = game.getDrawTwoCounter();
+                showMessage("You must draw " + cardsToDraw + " cards!");
+                
+                // Draw the required cards
+                for (int i = 0; i < cardsToDraw; i++) {
+                    Card drawnCard = game.getDeck().drawCard();
+                    if (drawnCard != null) {
+                        game.getPlayers().get(0).addCard(drawnCard);
+                    }
+                }
+                
+                // Reset the counter and move to next player
+                game.resetDrawTwoCounter();
+                game.moveToNextPlayer();
+                updateGameUI();
+                return;
+            }
+            
+            // Regular draw (no stack)
             Card drawnCard = game.drawCard();
             
             if (drawnCard != null) {
@@ -593,6 +635,20 @@ public class GameBoardController {
     @FXML
     public void handleBackToMenu() {
         sceneManager.showMainMenuScene();
+    }
+    
+    @FXML
+    public void toggleFullscreen(ActionEvent event) {
+        Stage stage = (Stage) fullscreenButton.getScene().getWindow();
+        boolean isFullScreen = stage.isFullScreen();
+        
+        if (isFullScreen) {
+            stage.setFullScreen(false);
+            fullscreenButton.setText("Fullscreen");
+        } else {
+            stage.setFullScreen(true);
+            fullscreenButton.setText("Exit Fullscreen");
+        }
     }
     
     private void playCPUTurn() {

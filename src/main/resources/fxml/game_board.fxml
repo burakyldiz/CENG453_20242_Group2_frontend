@@ -136,6 +136,7 @@
    <bottom>
       <HBox alignment="CENTER" spacing="10.0" BorderPane.alignment="CENTER">
          <children>
+            <Button fx:id="fullscreenButton" layoutX="945" layoutY="20" mnemonicParsing="false" onAction="#toggleFullscreen" text="Fullscreen" styleClass="action-button" />
             <Button fx:id="drawCardButton" mnemonicParsing="false" onAction="#handleDrawCard" prefHeight="40.0" prefWidth="120.0" style="-fx-background-color: #0074D9; -fx-background-radius: 5;" text="Draw Card" textFill="WHITE">
                <font>
                   <Font size="14.0" />
