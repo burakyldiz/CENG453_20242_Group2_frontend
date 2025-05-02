@@ -14,6 +14,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.effect.ColorAdjust;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.FlowPane;
@@ -25,6 +26,7 @@ import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 import javafx.util.Duration;
 import org.springframework.stereotype.Controller;
 
@@ -224,12 +226,39 @@ public class GameBoardController {
                 
                 // Get the human player's hand
                 List<Card> hand = game.getPlayers().get(0).getHand();
+                Card topCard = game.getTopCard();
                 
                 // Create an image view for each card
                 for (Card card : hand) {
                     ImageView cardView = createCardImageView(card);
                     cardView.setFitWidth(80);
                     cardView.setFitHeight(120);
+                    
+                    // Check if card is playable
+                    boolean isPlayable = true;
+                    
+                    // First check if there are any Draw Four or Draw Two stacks active
+                    if (game.getDrawFourCounter() > 0) {
+                        // Can only play Wild Draw Four on a Draw Four stack
+                        isPlayable = (card.getType() == Card.Type.WILD_DRAW_FOUR);
+                    } else if (game.getDrawTwoCounter() > 0) {
+                        // Can only play Draw Two on a Draw Two stack
+                        isPlayable = (card.getType() == Card.Type.DRAW_TWO);
+                    } else {
+                        // Regular playability check
+                        isPlayable = card.canBePlayedOn(topCard);
+                    }
+                    
+                    // Apply visual effect based on playability
+                    if (!isPlayable) {
+                        // Make unplayable cards appear faded
+                        cardView.setOpacity(0.5);
+                        cardView.setEffect(new ColorAdjust(0, -0.5, -0.5, 0)); // Reduce saturation and brightness
+                    } else {
+                        // Highlight playable cards
+                        cardView.setOpacity(1.0);
+                        cardView.setEffect(null);
+                    }
                     
                     // Add click handler for player's cards
                     int cardIndex = hand.indexOf(card);
@@ -249,13 +278,14 @@ public class GameBoardController {
             if (pane != null) {
                 pane.getChildren().clear();
                 
-                // CPU cards are face down
-                for (int i = 0; i < cpuPlayer.getHand().size(); i++) {
+                // Show CPU cards face-up for testing purposes as requested by professor
+                for (Card card : cpuPlayer.getHand()) {
                     try {
-                        // Use the card back image
-                        InputStream stream = getClass().getResourceAsStream(CARD_BACK_IMAGE);
+                        String imagePath = "/images/cards/" + card.getImageFileName();
+                        InputStream stream = getClass().getResourceAsStream(imagePath);
                         
                         if (stream != null) {
+                            System.out.println("Loading card image: " + imagePath);
                             ImageView cardView = new ImageView(new Image(stream));
                             cardView.setFitWidth(60);
                             cardView.setFitHeight(90);
@@ -265,16 +295,22 @@ public class GameBoardController {
                             Rectangle rect = new Rectangle(60, 90, Color.DARKGRAY);
                             rect.setStroke(Color.BLACK);
                             rect.setStrokeWidth(2);
-                            pane.getChildren().add(rect);
+                            Text cardText = new Text(card.toString());
+                            StackPane stack = new StackPane();
+                            stack.getChildren().addAll(rect, cardText);
+                            pane.getChildren().add(stack);
                         }
                     } catch (Exception e) {
-                        System.err.println("Error loading card back image: " + e.getMessage());
+                        System.err.println("Error loading CPU card image: " + e.getMessage());
                         
                         // Fallback if there's an error
                         Rectangle rect = new Rectangle(60, 90, Color.DARKGRAY);
                         rect.setStroke(Color.BLACK);
                         rect.setStrokeWidth(2);
-                        pane.getChildren().add(rect);
+                        Text cardText = new Text(card.toString());
+                        StackPane stack = new StackPane();
+                        stack.getChildren().addAll(rect, cardText);
+                        pane.getChildren().add(stack);
                     }
                 }
             }
