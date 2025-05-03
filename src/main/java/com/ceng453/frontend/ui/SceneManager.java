@@ -4,6 +4,7 @@ import com.ceng453.frontend.model.User;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.layout.Region;
 import javafx.stage.Stage;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
@@ -83,6 +84,14 @@ public class SceneManager {
             
             Parent root = loader.load();
             Scene scene = new Scene(root, width, height);
+            
+            // Make root resizable
+            if (root instanceof Region) {
+                Region region = (Region) root;
+                region.setMinSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
+                region.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
+                region.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+            }
             
             // Apply CSS
             String cssPath = "/css/styles.css";

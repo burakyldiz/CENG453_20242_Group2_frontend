@@ -17,6 +17,7 @@ import javafx.scene.control.Label;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
@@ -51,30 +52,31 @@ public class GameBoardController {
     private boolean waitingForColorSelection;
     
     // FXML elements
+    @FXML private Label currentPlayerLabel;
+    @FXML private Label currentColorLabel;
+    @FXML private Label directionLabel;
+    @FXML private Label gameStateLabel;
+    
     @FXML private FlowPane playerHandPane;
     @FXML private FlowPane cpu1HandPane;
     @FXML private FlowPane cpu2HandPane;
     @FXML private FlowPane cpu3HandPane;
+    
     @FXML private StackPane discardPilePane;
-    @FXML private Button drawCardButton;
-    @FXML private Button unoButton;
-    @FXML private Label statusLabel;
-    @FXML private Label messageLabel;
-    @FXML private Label currentPlayerLabel;
-    @FXML private Label directionLabel;
-    @FXML private VBox colorSelectPane;
-    @FXML private Button redButton;
-    @FXML private Button blueButton;
-    @FXML private Button greenButton;
-    @FXML private Button yellowButton;
-    @FXML private Circle unoIndicatorPlayer;
-    @FXML private Circle unoIndicatorCPU1;
-    @FXML private Circle unoIndicatorCPU2;
-    @FXML private Circle unoIndicatorCPU3;
+    @FXML private HBox colorSelectionPane;
+    
+    @FXML private Circle playerTurn;
+    @FXML private Circle cpu1Turn;
+    @FXML private Circle cpu2Turn;
+    @FXML private Circle cpu3Turn;
+    
     @FXML private Label playerLabel;
     @FXML private Label cpu1Label;
     @FXML private Label cpu2Label;
     @FXML private Label cpu3Label;
+    
+    @FXML private Button drawCardButton;
+    @FXML private Button unoButton;
     @FXML private Button fullscreenButton;
     
     public GameBoardController(SceneManager sceneManager) {
@@ -84,40 +86,30 @@ public class GameBoardController {
     @FXML
     public void initialize() {
         try {
-            System.out.println("GameBoardController initializing...");
+            // Get the player name from the current user
+            String playerName = sceneManager.getCurrentUser() != null ? 
+                    sceneManager.getCurrentUser().getUsername() : "Player";
             
-            // Initialize color selection buttons
-            if (redButton != null) {
-                redButton.setOnAction(e -> selectColor(Card.Color.RED));
-            }
-            if (blueButton != null) {
-                blueButton.setOnAction(e -> selectColor(Card.Color.BLUE));
-            }
-            if (greenButton != null) {
-                greenButton.setOnAction(e -> selectColor(Card.Color.GREEN));
-            }
-            if (yellowButton != null) {
-                yellowButton.setOnAction(e -> selectColor(Card.Color.YELLOW));
-            }
-            
-            // Set up other event handlers
-            if (unoButton != null) {
-                unoButton.setOnAction(e -> callUno());
-            }
+            // Initialize a new game with one human player and three CPU players
+            game = new Game();
+            game.initializeSinglePlayerGame(playerName);
             
             // Hide color selection pane initially
-            if (colorSelectPane != null) {
-                colorSelectPane.setVisible(false);
+            if (colorSelectionPane != null) {
+                colorSelectionPane.setVisible(false);
             }
             waitingForColorSelection = false;
             
-            // Initialize the game
-            initializeGame();
+            // Initial update of all UI elements
+            updateGameUI();
             
+            // Automatically play for CPU if they start first
+            if (!isHumanTurn()) {
+                playCPUTurn();
+            }
         } catch (Exception e) {
+            showMessage("Error initializing game: " + e.getMessage());
             e.printStackTrace();
-            System.err.println("Error in GameBoardController.initialize(): " + e.getMessage());
-            showErrorAlert("Game Initialization Error", "Failed to initialize game: " + e.getMessage());
         }
     }
     
@@ -137,88 +129,44 @@ public class GameBoardController {
     }
     
     private void updateGameUI() {
-        // Update player's hand
-        updatePlayerHand();
-        
-        // Update CPU hands
-        updateCPUHandPane(cpu1HandPane, game.getPlayers().get(1));
-        updateCPUHandPane(cpu2HandPane, game.getPlayers().get(2));
-        updateCPUHandPane(cpu3HandPane, game.getPlayers().get(3));
-        
-        // Update discard pile
-        updateDiscardPile();
-        
-        // Update current player label with highlight
-        if (currentPlayerLabel != null) {
-            Player currentPlayer = game.getPlayers().get(game.getCurrentPlayerIndex());
-            currentPlayerLabel.setText("Current Player: " + currentPlayer.getName());
+        try {
+            updateDiscardPile();
+            updatePlayerHand();
+            updateCPUHandPanes();
+            updatePlayerTurnIndicators();
+            updateUnoIndicators();
             
-            // Reset all turn indicators to dark gray
-            if (unoIndicatorPlayer != null) unoIndicatorPlayer.setFill(Color.DARKGREY);
-            if (unoIndicatorCPU1 != null) unoIndicatorCPU1.setFill(Color.DARKGREY);
-            if (unoIndicatorCPU2 != null) unoIndicatorCPU2.setFill(Color.DARKGREY);
-            if (unoIndicatorCPU3 != null) unoIndicatorCPU3.setFill(Color.DARKGREY);
-            
-            // Set the turn indicator for current player to green
-            switch (game.getCurrentPlayerIndex()) {
-                case 0:
-                    if (unoIndicatorPlayer != null) unoIndicatorPlayer.setFill(Color.GREEN);
-                    break;
-                case 1:
-                    if (unoIndicatorCPU1 != null) unoIndicatorCPU1.setFill(Color.GREEN);
-                    break;
-                case 2:
-                    if (unoIndicatorCPU2 != null) unoIndicatorCPU2.setFill(Color.GREEN);
-                    break;
-                case 3:
-                    if (unoIndicatorCPU3 != null) unoIndicatorCPU3.setFill(Color.GREEN);
-                    break;
+            // Update current color indicator
+            if (currentColorLabel != null) {
+                Card.Color currentColor = game.getCurrentColor();
+                currentColorLabel.setText("Current Color: " + currentColor.toString());
+                String colorStyle = getColorStyle(currentColor);
+                currentColorLabel.setStyle("-fx-font-weight: bold; " + colorStyle);
             }
             
-            // Add visual indication of whose turn it is with label styling
-            String playerStyle = "-fx-font-weight: normal; -fx-text-fill: white;";
-            String activeStyle = "-fx-font-weight: bold; -fx-text-fill: yellow;";
-            
-            // Reset all styles first
-            if (playerLabel != null) playerLabel.setStyle(playerStyle);
-            if (cpu1Label != null) cpu1Label.setStyle(playerStyle);
-            if (cpu2Label != null) cpu2Label.setStyle(playerStyle);
-            if (cpu3Label != null) cpu3Label.setStyle(playerStyle);
-            
-            // Highlight the active player
-            switch (game.getCurrentPlayerIndex()) {
-                case 0:
-                    if (playerLabel != null) playerLabel.setStyle(activeStyle);
-                    break;
-                case 1:
-                    if (cpu1Label != null) cpu1Label.setStyle(activeStyle); 
-                    break;
-                case 2:
-                    if (cpu2Label != null) cpu2Label.setStyle(activeStyle);
-                    break;
-                case 3:
-                    if (cpu3Label != null) cpu3Label.setStyle(activeStyle);
-                    break;
+            // Clear any previous messages
+            if (gameStateLabel != null) {
+                gameStateLabel.setText("");
             }
+            
+            // Check if it's CPU's turn and play automatically
+            if (!isHumanTurn() && !game.isGameOver() && !waitingForColorSelection) {
+                playCPUTurn();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Error updating game UI: " + e.getMessage());
         }
-        
-        // Update direction indicator
-        if (directionLabel != null) {
-            directionLabel.setText("Direction: " + (game.isClockwise() ? "Clockwise" : "Counter-Clockwise"));
-        }
-        
-        // Update UNO indicators
-        updateUnoIndicators();
-        
-        // Clear any previous messages
-        if (messageLabel != null) {
-            messageLabel.setText("");
-        }
-        
-        // Check if it's CPU's turn and play automatically
-        if (!isHumanTurn()) {
-            playCPUTurn();
-        }
+    }
+    
+    private String getColorStyle(Card.Color color) {
+        return switch (color) {
+            case RED -> "-fx-text-fill: #ff4136;";
+            case BLUE -> "-fx-text-fill: #0074D9;";
+            case GREEN -> "-fx-text-fill: #2ECC40;";
+            case YELLOW -> "-fx-text-fill: #FFDC00;";
+            default -> "-fx-text-fill: white;";
+        };
     }
     
     private void updatePlayerHand() {
@@ -239,25 +187,32 @@ public class GameBoardController {
                     // Check if card is playable
                     boolean isPlayable = true;
                     
-                    // First check if there are any Draw Four or Draw Two stacks active
-                    if (game.getDrawFourCounter() > 0) {
-                        // Can only play Wild Draw Four on a Draw Four stack
-                        isPlayable = (card.getType() == Card.Type.WILD_DRAW_FOUR);
-                    } else if (game.getDrawTwoCounter() > 0) {
-                        // Can only play Draw Two on a Draw Two stack
-                        isPlayable = (card.getType() == Card.Type.DRAW_TWO);
+                    // Only apply playability checks and visual fading when it's the player's turn
+                    if (isHumanTurn()) {
+                        // First check if there are any Draw Four or Draw Two stacks active
+                        if (game.getDrawFourCounter() > 0) {
+                            // Can only play Wild Draw Four on a Draw Four stack
+                            isPlayable = (card.getType() == Card.Type.WILD_DRAW_FOUR);
+                        } else if (game.getDrawTwoCounter() > 0) {
+                            // Can only play Draw Two on a Draw Two stack
+                            isPlayable = (card.getType() == Card.Type.DRAW_TWO);
+                        } else {
+                            // Regular playability check
+                            isPlayable = card.canBePlayedOn(topCard);
+                        }
+                        
+                        // Apply visual effect based on playability
+                        if (!isPlayable) {
+                            // Make unplayable cards appear faded
+                            cardView.setOpacity(0.5);
+                            cardView.setEffect(new ColorAdjust(0, -0.5, -0.5, 0)); // Reduce saturation and brightness
+                        } else {
+                            // Highlight playable cards
+                            cardView.setOpacity(1.0);
+                            cardView.setEffect(null);
+                        }
                     } else {
-                        // Regular playability check
-                        isPlayable = card.canBePlayedOn(topCard);
-                    }
-                    
-                    // Apply visual effect based on playability
-                    if (!isPlayable) {
-                        // Make unplayable cards appear faded
-                        cardView.setOpacity(0.5);
-                        cardView.setEffect(new ColorAdjust(0, -0.5, -0.5, 0)); // Reduce saturation and brightness
-                    } else {
-                        // Highlight playable cards
+                        // Not player's turn - all cards appear normal
                         cardView.setOpacity(1.0);
                         cardView.setEffect(null);
                     }
@@ -273,6 +228,12 @@ public class GameBoardController {
             System.err.println("Error updating player hand: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+    
+    private void updateCPUHandPanes() {
+        updateCPUHandPane(cpu1HandPane, game.getPlayers().get(1));
+        updateCPUHandPane(cpu2HandPane, game.getPlayers().get(2));
+        updateCPUHandPane(cpu3HandPane, game.getPlayers().get(3));
     }
     
     private void updateCPUHandPane(FlowPane pane, Player cpuPlayer) {
@@ -434,22 +395,32 @@ public class GameBoardController {
     }
     
     private void updateUnoIndicators() {
-        try {
-            // Update UNO indicators based on player status
-            if (unoIndicatorPlayer != null) {
-                unoIndicatorPlayer.setFill(game.getPlayers().get(0).hasCalledUno() ? Color.RED : Color.DARKGREY);
+        // Reset all UNO indicators
+        if (playerTurn != null) playerTurn.setFill(Color.DARKGREY);
+        if (cpu1Turn != null) cpu1Turn.setFill(Color.DARKGREY);
+        if (cpu2Turn != null) cpu2Turn.setFill(Color.DARKGREY);
+        if (cpu3Turn != null) cpu3Turn.setFill(Color.DARKGREY);
+        
+        // Check each player's hand size and update indicators
+        for (int i = 0; i < game.getPlayers().size(); i++) {
+            Player player = game.getPlayers().get(i);
+            if (player.getHand().size() == 1) {
+                // Player has UNO!
+                switch (i) {
+                    case 0:
+                        if (playerTurn != null) playerTurn.setFill(Color.RED);
+                        break;
+                    case 1:
+                        if (cpu1Turn != null) cpu1Turn.setFill(Color.RED);
+                        break;
+                    case 2:
+                        if (cpu2Turn != null) cpu2Turn.setFill(Color.RED);
+                        break;
+                    case 3:
+                        if (cpu3Turn != null) cpu3Turn.setFill(Color.RED);
+                        break;
+                }
             }
-            if (unoIndicatorCPU1 != null) {
-                unoIndicatorCPU1.setFill(game.getPlayers().get(1).hasCalledUno() ? Color.RED : Color.DARKGREY);
-            }
-            if (unoIndicatorCPU2 != null) {
-                unoIndicatorCPU2.setFill(game.getPlayers().get(2).hasCalledUno() ? Color.RED : Color.DARKGREY);
-            }
-            if (unoIndicatorCPU3 != null) {
-                unoIndicatorCPU3.setFill(game.getPlayers().get(3).hasCalledUno() ? Color.RED : Color.DARKGREY);
-            }
-        } catch (Exception e) {
-            System.err.println("Error updating UNO indicators: " + e.getMessage());
         }
     }
     
@@ -467,8 +438,8 @@ public class GameBoardController {
                 if (card.getType() == Card.Type.WILD || card.getType() == Card.Type.WILD_DRAW_FOUR) {
                     // For wild cards, we need to select a color
                     lastPlayedCard = card;
-                    if (colorSelectPane != null) {
-                        colorSelectPane.setVisible(true);
+                    if (colorSelectionPane != null) {
+                        colorSelectionPane.setVisible(true);
                     }
                     waitingForColorSelection = true;
                     showMessage("Select a color for your wild card");
@@ -563,77 +534,44 @@ public class GameBoardController {
     }
     
     private void selectColor(Card.Color color) {
-        if (waitingForColorSelection && lastPlayedCard != null) {
-            // Get the index of the wild card in the player's hand
-            int cardIndex = game.getPlayers().get(0).getHand().indexOf(lastPlayedCard);
-            
-            if (cardIndex >= 0) {
-                // Set the chosen color
-                game.chooseWildColor(color);
-                
-                // Play the wild card
-                boolean played = game.playCard(cardIndex);
-                
-                if (played) {
-                    // Check if the player has won
-                    if (game.getPlayers().get(0).getHand().isEmpty()) {
-                        handleGameOver(game.getPlayers().get(0));
-                    } else {
-                        // Update UI and continue the game
-                        updateGameUI();
-                    }
-                }
-            }
-            
-            // Hide the color selection pane
-            if (colorSelectPane != null) {
-                colorSelectPane.setVisible(false);
-            }
-            waitingForColorSelection = false;
-            lastPlayedCard = null;
-        }
+        handleColorSelected(color);
     }
     
     @FXML
     public void handleColorSelection(ActionEvent event) {
-        if (!waitingForColorSelection) return;
-        
-        Card.Color selectedColor;
-        if (event.getSource() == redButton) {
-            selectedColor = Card.Color.RED;
-        } else if (event.getSource() == yellowButton) {
-            selectedColor = Card.Color.YELLOW;
-        } else if (event.getSource() == greenButton) {
-            selectedColor = Card.Color.GREEN;
-        } else if (event.getSource() == blueButton) {
-            selectedColor = Card.Color.BLUE;
-        } else {
-            return;
+        if (event.getSource() instanceof Button) {
+            Button colorButton = (Button) event.getSource();
+            
+            if (colorButton.getText().equalsIgnoreCase("Red")) {
+                selectColor(Card.Color.RED);
+            } else if (colorButton.getText().equalsIgnoreCase("Blue")) {
+                selectColor(Card.Color.BLUE);
+            } else if (colorButton.getText().equalsIgnoreCase("Green")) {
+                selectColor(Card.Color.GREEN);
+            } else if (colorButton.getText().equalsIgnoreCase("Yellow")) {
+                selectColor(Card.Color.YELLOW);
+            }
         }
-        
-        selectColor(selectedColor);
     }
     
     @FXML
     public void callUno() {
-        Player humanPlayer = game.getPlayers().get(0);
-        
-        if (humanPlayer.getHand().size() == 1) {
-            humanPlayer.callUno();
-            updateUnoIndicators();
-            showMessage("You called UNO!");
+        if (isHumanTurn()) {
+            Player player = game.getPlayers().get(0);
+            if (player.getHand().size() == 1) {
+                showMessage("You called UNO!");
+                // Update UI
+                updateGameUI();
+            } else {
+                showMessage("You can only call UNO when you have one card left!");
+            }
         } else {
-            showMessage("You can only call UNO when you have one card left!");
+            showMessage("You can only call UNO during your turn!");
         }
     }
     
     @FXML
-    public void handleUno() {
-        callUno();
-    }
-    
-    @FXML
-    public void handleBackToMenu() {
+    public void returnToMainMenu() {
         sceneManager.showMainMenuScene();
     }
     
@@ -645,79 +583,83 @@ public class GameBoardController {
         if (isFullScreen) {
             stage.setFullScreen(false);
             fullscreenButton.setText("Fullscreen");
+            
+            // Reset to default size when exiting fullscreen
+            stage.setWidth(1024);
+            stage.setHeight(768);
         } else {
-            stage.setFullScreen(true);
+            // Set resizable before going fullscreen
+            stage.setResizable(true);
+            
+            // Change button text
             fullscreenButton.setText("Exit Fullscreen");
+            
+            // Apply fullscreen
+            stage.setFullScreen(true);
+            
+            // Apply full screen exit hint (empty = no hint)
+            stage.setFullScreenExitHint("");
+            stage.setFullScreenExitKeyCombination(KeyCombination.valueOf("ESCAPE"));
         }
     }
     
     private void playCPUTurn() {
         System.out.println("CPU turn started. Current player index: " + game.getCurrentPlayerIndex());
         
-        // Use a single delay for this CPU's turn, not recursive
         PauseTransition pause = new PauseTransition(Duration.seconds(1));
         pause.setOnFinished(e -> {
-            try {
-                if (!isHumanTurn() && !game.isGameOver()) {
-                    // Let the CPU play its turn
-                    System.out.println("CPU playing turn...");
-                    boolean cpuPlayed = game.playCpuTurn();
-                    System.out.println("CPU played: " + cpuPlayed + ", Current player after CPU: " + game.getCurrentPlayerIndex());
-                    
-                    // Check if a CPU has won
-                    for (Player player : game.getPlayers()) {
-                        if (player.getHand().isEmpty()) {
-                            handleGameOver(player);
-                            return;
-                        }
-                    }
-                    
-                    // Force update the discard pile to show the card that was just played
-                    updateDiscardPile();
-                    
-                    // Update all other UI elements
-                    updateCPUHandPane(cpu1HandPane, game.getPlayers().get(1));
-                    updateCPUHandPane(cpu2HandPane, game.getPlayers().get(2));
-                    updateCPUHandPane(cpu3HandPane, game.getPlayers().get(3));
-                    updatePlayerTurnIndicators();
-                    
-                    // If it's still a CPU turn (but different CPU), schedule the next CPU turn
-                    if (!isHumanTurn() && !game.isGameOver()) {
-                        // Schedule another CPU turn after a slight delay
-                        PauseTransition nextCpuTurn = new PauseTransition(Duration.seconds(1));
-                        nextCpuTurn.setOnFinished(event -> playCPUTurn());
-                        nextCpuTurn.play();
-                    }
+            if (!isHumanTurn() && !game.isGameOver()) {
+                System.out.println("CPU playing turn...");
+                System.out.println("CPU " + game.getPlayers().get(game.getCurrentPlayerIndex()).getName() + " is playing turn");
+                
+                // CPU takes its turn
+                boolean cpuPlayed = game.playCpuTurn();
+                System.out.println("CPU turn finished. Next player: " + game.getCurrentPlayerIndex());
+                System.out.println("CPU played: " + cpuPlayed + ", Current player after CPU: " + game.getCurrentPlayerIndex());
+                
+                // Update UI to reflect CPU's move
+                updateDiscardPile();
+                updateCPUHandPanes();
+                updatePlayerTurnIndicators();
+                
+                // Force a refresh of player's hand to update card fading
+                if (isHumanTurn()) {
+                    updatePlayerHand();
                 }
-            } catch (Exception ex) {
-                System.err.println("Error during CPU turn: " + ex.getMessage());
-                ex.printStackTrace();
+                
+                // If it's still a CPU turn (but different CPU), schedule the next CPU turn
+                if (!isHumanTurn() && !game.isGameOver()) {
+                    PauseTransition nextCpuTurn = new PauseTransition(Duration.seconds(1));
+                    nextCpuTurn.setOnFinished(event -> playCPUTurn());
+                    nextCpuTurn.play();
+                }
             }
         });
+        
         pause.play();
     }
     
     // Helper method to update turn indicators
     private void updatePlayerTurnIndicators() {
         // Reset all turn indicators to dark gray
-        if (unoIndicatorPlayer != null) unoIndicatorPlayer.setFill(Color.DARKGREY);
-        if (unoIndicatorCPU1 != null) unoIndicatorCPU1.setFill(Color.DARKGREY);
-        if (unoIndicatorCPU2 != null) unoIndicatorCPU2.setFill(Color.DARKGREY);
-        if (unoIndicatorCPU3 != null) unoIndicatorCPU3.setFill(Color.DARKGREY);
+        if (playerTurn != null) playerTurn.setFill(Color.DARKGREY);
+        if (cpu1Turn != null) cpu1Turn.setFill(Color.DARKGREY);
+        if (cpu2Turn != null) cpu2Turn.setFill(Color.DARKGREY);
+        if (cpu3Turn != null) cpu3Turn.setFill(Color.DARKGREY);
         
         // Set the turn indicator for current player to green
         switch (game.getCurrentPlayerIndex()) {
             case 0:
-                if (unoIndicatorPlayer != null) unoIndicatorPlayer.setFill(Color.GREEN);
+                if (playerTurn != null) playerTurn.setFill(Color.GREEN);
                 break;
             case 1:
-                if (unoIndicatorCPU1 != null) unoIndicatorCPU1.setFill(Color.GREEN);
+                if (cpu1Turn != null) cpu1Turn.setFill(Color.GREEN);
                 break;
             case 2:
-                if (unoIndicatorCPU2 != null) unoIndicatorCPU2.setFill(Color.GREEN);
+                if (cpu2Turn != null) cpu2Turn.setFill(Color.GREEN);
                 break;
             case 3:
-                if (unoIndicatorCPU3 != null) unoIndicatorCPU3.setFill(Color.GREEN);
+                if (cpu3Turn != null) cpu3Turn.setFill(Color.GREEN);
                 break;
         }
         
@@ -785,8 +727,10 @@ public class GameBoardController {
     }
     
     private void showMessage(String message) {
-        if (messageLabel != null) {
-            messageLabel.setText(message);
+        if (gameStateLabel != null) {
+            gameStateLabel.setText(message);
+        } else {
+            System.out.println("Message: " + message);
         }
     }
     
@@ -812,6 +756,61 @@ public class GameBoardController {
                 return Color.YELLOW;
             default:
                 return Color.BLACK;
+        }
+    }
+    
+    @FXML
+    private void selectRedColor() {
+        handleColorSelected(Card.Color.RED);
+    }
+    
+    @FXML
+    private void selectBlueColor() {
+        handleColorSelected(Card.Color.BLUE);
+    }
+    
+    @FXML
+    private void selectGreenColor() {
+        handleColorSelected(Card.Color.GREEN);
+    }
+    
+    @FXML
+    private void selectYellowColor() {
+        handleColorSelected(Card.Color.YELLOW);
+    }
+    
+    private void handleColorSelected(Card.Color color) {
+        if (waitingForColorSelection && lastPlayedCard != null) {
+            game.setCurrentColor(color);
+            
+            // Update UI to show the selected color
+            if (currentColorLabel != null) {
+                currentColorLabel.setText("Current Color: " + color.toString());
+                String colorStyle = switch (color) {
+                    case RED -> "-fx-text-fill: #ff4136;";
+                    case BLUE -> "-fx-text-fill: #0074D9;";
+                    case GREEN -> "-fx-text-fill: #2ECC40;";
+                    case YELLOW -> "-fx-text-fill: #FFDC00;";
+                    default -> "-fx-text-fill: white;";
+                };
+                currentColorLabel.setStyle("-fx-font-weight: bold; " + colorStyle);
+            }
+            
+            // Hide the color selection pane
+            if (colorSelectionPane != null) {
+                colorSelectionPane.setVisible(false);
+            }
+            waitingForColorSelection = false;
+            lastPlayedCard = null;
+            
+            // Move to the next player's turn after color selection
+            game.moveToNextPlayer();
+            updateGameUI();
+            
+            // Check if it's now a CPU's turn
+            if (!isHumanTurn() && !game.isGameOver()) {
+                playCPUTurn();
+            }
         }
     }
 }

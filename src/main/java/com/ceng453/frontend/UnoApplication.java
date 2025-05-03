@@ -25,11 +25,13 @@ public class UnoApplication extends Application {
     
     @Override
     public void start(Stage primaryStage) {
-        // Set up the primary stage
+        // Configure stage
         primaryStage.setTitle("UNO Game");
-        primaryStage.setResizable(false);
+        primaryStage.setResizable(true);
+        primaryStage.setMinWidth(800);
+        primaryStage.setMinHeight(600);
         
-        // Create and inject the scene manager
+        // Initialize scene manager
         SceneManager sceneManager = springContext.getBean(SceneManager.class);
         sceneManager.setPrimaryStage(primaryStage);
         

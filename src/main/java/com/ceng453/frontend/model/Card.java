@@ -67,8 +67,12 @@ public class Card {
             return true;
         }
         
-        // Match by number or type
-        if (this.type == Type.NUMBER && topCard.getType() == Type.NUMBER) {
+        // Match by number or type (including wild cards after color selection)
+        if (topCard.getType() == Type.WILD || topCard.getType() == Type.WILD_DRAW_FOUR) {
+            // For wild cards, we only need to check the current game color, which isn't available here
+            // This is handled separately in the Game.playCard method
+            return false;
+        } else if (this.type == Type.NUMBER && topCard.getType() == Type.NUMBER) {
             return this.number == topCard.getNumber();
         } else {
             return this.type == topCard.getType();
