@@ -75,9 +75,18 @@ public class GameBoardController {
     @FXML private Label cpu2Label;
     @FXML private Label cpu3Label;
     
+    @FXML private HBox playerHandContainer;
     @FXML private Button drawCardButton;
     @FXML private Button unoButton;
     @FXML private Button fullscreenButton;
+    
+    // Cheat buttons
+    @FXML private VBox cheatButtonsContainer;
+    @FXML private Button cheatSkipButton;
+    @FXML private Button cheatReverseButton;
+    @FXML private Button cheatDrawTwoButton;
+    @FXML private Button cheatWildButton;
+    @FXML private Button cheatWildDrawFourButton;
     
     public GameBoardController(SceneManager sceneManager, ApiService apiService) {
         this.sceneManager = sceneManager;
@@ -207,6 +216,9 @@ public class GameBoardController {
             // Initial update of all UI elements
             updateGameUI();
             
+            // Set up cheat buttons if they exist in FXML
+            setupCheatButtons();
+            
             // Automatically play for CPU if they start first
             if (!isHumanTurn()) {
                 playCPUTurn();
@@ -250,6 +262,7 @@ public class GameBoardController {
             updateDiscardPile();
             updatePlayerHand();
             updateCPUHandPanes();
+            // Initialize UI components
             updateTurnIndicators();
             updateUnoIndicators();
             updateColorDisplay();
@@ -1027,9 +1040,103 @@ public class GameBoardController {
             e.printStackTrace();
         }
     }
-    // Helper method to update turn indicators
+    // Helper method to set up cheat buttons
+    private void setupCheatButtons() {
+        // First check if the cheat buttons are even present in the FXML
+        if (cheatSkipButton == null || cheatReverseButton == null || 
+            cheatDrawTwoButton == null || cheatWildButton == null || 
+            cheatWildDrawFourButton == null) {
+            System.out.println("Cheat buttons not found in FXML. Skipping initialization.");
+            return;
+        }
+        
+        // Set up the Skip cheat button
+        cheatSkipButton.setOnAction(event -> {
+            if (isHumanTurn()) {
+                System.out.println("Using Skip cheat");
+                addCheatCardToHand(Card.Type.SKIP);
+                showMessage("Skip card added to your hand");
+            } else {
+                showMessage("You can only use cheats during your turn!");
+            }
+        });
+        
+        // Set up the Reverse cheat button
+        cheatReverseButton.setOnAction(event -> {
+            if (isHumanTurn()) {
+                System.out.println("Using Reverse cheat");
+                addCheatCardToHand(Card.Type.REVERSE);
+                showMessage("Reverse card added to your hand");
+            } else {
+                showMessage("You can only use cheats during your turn!");
+            }
+        });
+        
+        // Set up the Draw Two cheat button
+        cheatDrawTwoButton.setOnAction(event -> {
+            if (isHumanTurn()) {
+                System.out.println("Using Draw Two cheat");
+                addCheatCardToHand(Card.Type.DRAW_TWO);
+                showMessage("Draw Two card added to your hand");
+            } else {
+                showMessage("You can only use cheats during your turn!");
+            }
+        });
+        
+        // Set up the Wild cheat button
+        cheatWildButton.setOnAction(event -> {
+            if (isHumanTurn()) {
+                System.out.println("Using Wild cheat");
+                addCheatCardToHand(Card.Type.WILD);
+                showMessage("Wild card added to your hand");
+            } else {
+                showMessage("You can only use cheats during your turn!");
+            }
+        });
+        
+        // Set up the Wild Draw Four cheat button
+        cheatWildDrawFourButton.setOnAction(event -> {
+            if (isHumanTurn()) {
+                System.out.println("Using Wild Draw Four cheat");
+                addCheatCardToHand(Card.Type.WILD_DRAW_FOUR);
+                showMessage("Wild Draw Four card added to your hand");
+            } else {
+                showMessage("You can only use cheats during your turn!");
+            }
+        });
+    }
+    
+    // Helper method to add a cheat card to the player's hand
+    private void addCheatCardToHand(Card.Type cardType) {
+        // Create a new card based on the requested type
+        Card cheatCard;
+        
+        // For wild cards
+        if (cardType == Card.Type.WILD || cardType == Card.Type.WILD_DRAW_FOUR) {
+            cheatCard = new Card(Card.Color.WILD, cardType);
+        } 
+        // For action cards (Skip, Reverse, Draw Two)
+        else if (cardType == Card.Type.SKIP || cardType == Card.Type.REVERSE || cardType == Card.Type.DRAW_TWO) {
+            // Use current top card color for better playability
+            Card.Color currentColor = game.getCurrentColor();
+            cheatCard = new Card(currentColor, cardType);
+        }
+        // Should never reach here with our current implementation
+        else {
+            System.out.println("Invalid cheat card type: " + cardType);
+            return;
+        }
+        
+        // Add the card to the human player's hand
+        game.getPlayers().get(0).addCard(cheatCard);
+        
+        // Update the UI to show the new card
+        updatePlayerHand();
+    }
+    
+    // Method to update turn indicators
     private void updateTurnIndicators() {
-        // Define the styles once outside the lambdas
+        // Define the styles for turn indicators
         final String playerStyle = "-fx-font-weight: normal; -fx-text-fill: white;";
         final String activeStyle = "-fx-font-weight: bold; -fx-text-fill: yellow;";
         final Color BRIGHT_GREEN = Color.web("#00FF00");  // Bright green
