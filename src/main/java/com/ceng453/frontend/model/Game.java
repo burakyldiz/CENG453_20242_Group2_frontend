@@ -106,6 +106,7 @@ public class Game {
                 currentPlayer.playCard(cardIndex);
                 discardPile.add(card);
                 drawFourCounter += 4;
+                System.out.println("Draw Four counter increased to: " + drawFourCounter);
                 moveToNextPlayer();
                 return true;
             } else {
@@ -121,6 +122,7 @@ public class Game {
                 currentPlayer.playCard(cardIndex);
                 discardPile.add(card);
                 drawTwoCounter += 2;
+                System.out.println("Draw Two counter increased to: " + drawTwoCounter);
                 moveToNextPlayer();
                 return true;
             } else {
@@ -137,6 +139,9 @@ public class Game {
             // For wild cards, we need to check if the card matches the current color
             if (card.getColor() == currentColor || card.getColor() == Card.Color.WILD) {
                 canPlay = true;
+                System.out.println("Card can be played because it matches the current color: " + currentColor);
+            } else {
+                System.out.println("Card color " + card.getColor() + " doesn't match current color " + currentColor);
             }
         } else {
             // Regular card playability check
@@ -150,7 +155,8 @@ public class Game {
         }
         
         // Special rule for Wild Draw Four - can only be played if no other valid card
-        if (card.getType() == Card.Type.WILD_DRAW_FOUR) {
+        // Skip this check if there's a Draw Four stack already (for stacking Wild Draw Four)
+        if (card.getType() == Card.Type.WILD_DRAW_FOUR && drawFourCounter == 0) {
             if (hasValidCardOtherThanWildDrawFour(currentPlayer, topCard)) {
                 System.out.println("Cannot play Wild Draw Four when you have other valid cards to play.");
                 return false;
@@ -164,6 +170,7 @@ public class Game {
         // Update current color for non-wild cards
         if (card.getColor() != Card.Color.WILD) {
             currentColor = card.getColor();
+            System.out.println("Current color updated to: " + currentColor);
         }
         
         // Check if player has won
@@ -181,8 +188,15 @@ public class Game {
     // Check if player has a valid card other than Wild Draw Four
     private boolean hasValidCardOtherThanWildDrawFour(Player player, Card topCard) {
         for (Card card : player.getHand()) {
-            if (card.getType() != Card.Type.WILD_DRAW_FOUR && card.canBePlayedOn(topCard)) {
-                return true;
+            if (card.getType() != Card.Type.WILD_DRAW_FOUR) {
+                if (topCard.getType() == Card.Type.WILD || topCard.getType() == Card.Type.WILD_DRAW_FOUR) {
+                    // For wild cards, check against current color
+                    if (card.getColor() == currentColor || card.getColor() == Card.Color.WILD) {
+                        return true;
+                    }
+                } else if (card.canBePlayedOn(topCard)) {
+                    return true;
+                }
             }
         }
         return false;
@@ -206,6 +220,7 @@ public class Game {
                 
             case DRAW_TWO:
                 drawTwoCounter += 2;
+                System.out.println("Draw Two counter set to: " + drawTwoCounter);
                 moveToNextPlayer();
                 break;
                 
@@ -216,6 +231,7 @@ public class Game {
             case WILD_DRAW_FOUR:
                 // Update the drawFourCounter instead of directly making the next player draw
                 drawFourCounter += 4;
+                System.out.println("Draw Four counter set to: " + drawFourCounter);
                 moveToNextPlayer();
                 break;
                 
@@ -233,7 +249,8 @@ public class Game {
     // Method to choose color for wild cards
     public void chooseWildColor(Card.Color color) {
         currentColor = color;
-        moveToNextPlayer();
+        System.out.println("Wild color set to: " + color);
+        // Do not move to next player here as it's handled elsewhere
     }
     
     // Method to handle draw two stacking
@@ -296,6 +313,7 @@ public class Game {
             
             if (hasDrawFour && !currentPlayer.isHuman()) {
                 // CPU player has a Wild Draw Four card and can stack - always stack for CPU
+                System.out.println("CPU stacking Wild Draw Four!");
                 playCard(drawFourIndex);
             } else if (hasDrawFour && currentPlayer.isHuman()) {
                 // Human player has Wild Draw Four card - decision to stack is made through the UI
@@ -311,8 +329,16 @@ public class Game {
                         drawnCard = deck.drawCard();
                     }
                     currentPlayer.addCard(drawnCard);
+                    System.out.println("Drew card: " + drawnCard);
                 }
-                drawFourCounter = 0; // Reset counter - IMPORTANT: this clears the stack so next player can play color
+                
+                // Reset counter - IMPORTANT: this clears the stack so next player can play color
+                System.out.println("Draw Four counter reset from " + drawFourCounter + " to 0");
+                drawFourCounter = 0;
+                
+                // Don't change the current color - it should remain what was set by the Wild Draw Four
+                System.out.println("After drawing penalty cards, current color remains: " + currentColor);
+                
                 moveToNextPlayer(); // Skip turn
             }
         }
@@ -359,9 +385,16 @@ public class Game {
         if (drawFourCounter > 0) {
             System.out.println("Player " + currentPlayer.getName() + " must draw " + drawFourCounter + " cards!");
             for (int i = 0; i < drawFourCounter; i++) {
-                currentPlayer.addCard(deck.drawCard());
+                Card drawnCard = deck.drawCard();
+                if (drawnCard == null) {
+                    reshuffleDeck();
+                    drawnCard = deck.drawCard();
+                }
+                currentPlayer.addCard(drawnCard);
+                System.out.println("Drew card: " + drawnCard);
             }
             drawFourCounter = 0; // Reset counter
+            System.out.println("Draw Four counter reset to 0");
             moveToNextPlayer();
             return null;
         }
@@ -370,9 +403,16 @@ public class Game {
         if (drawTwoCounter > 0) {
             System.out.println("Player " + currentPlayer.getName() + " must draw " + drawTwoCounter + " cards!");
             for (int i = 0; i < drawTwoCounter; i++) {
-                currentPlayer.addCard(deck.drawCard());
+                Card drawnCard = deck.drawCard();
+                if (drawnCard == null) {
+                    reshuffleDeck();
+                    drawnCard = deck.drawCard();
+                }
+                currentPlayer.addCard(drawnCard);
+                System.out.println("Drew card: " + drawnCard);
             }
             drawTwoCounter = 0; // Reset counter
+            System.out.println("Draw Two counter reset to 0");
             moveToNextPlayer();
             return null;
         }
@@ -387,6 +427,7 @@ public class Game {
         }
         
         currentPlayer.addCard(card);
+        System.out.println("Player " + currentPlayer.getName() + " drew: " + card);
         
         // Check if drawn card can be played
         Card topCard = getTopCard();
@@ -420,6 +461,7 @@ public class Game {
         } else {
             currentPlayerIndex = (currentPlayerIndex + players.size() - 1) % players.size();
         }
+        System.out.println("Moving to next player: " + currentPlayerIndex + " (" + players.get(currentPlayerIndex).getName() + ")");
     }
     
     // Method to get the current top card on the discard pile
@@ -461,51 +503,137 @@ public class Game {
         }
         
         try {
-            // Check for any Draw Two stacking
-            if (drawTwoCounter > 0) {
-                // Draw cards and move to next player
-                System.out.println("CPU must draw " + drawTwoCounter + " cards due to Draw Two stack");
-                for (int i = 0; i < drawTwoCounter; i++) {
-                    Card drawnCard = deck.drawCard();
-                    if (drawnCard == null) {
-                        reshuffleDeck();
-                        drawnCard = deck.drawCard();
+            System.out.println("CPU " + currentPlayer.getName() + " hand: " + currentPlayer.getHand());
+            
+            // IMPORTANT: Check for Draw Four stack first
+            if (drawFourCounter > 0) {
+                boolean hasDrawFour = false;
+                int drawFourIndex = -1;
+                
+                // Check if CPU has a Wild Draw Four to play
+                for (int i = 0; i < currentPlayer.getHand().size(); i++) {
+                    Card card = currentPlayer.getHand().get(i);
+                    if (card.getType() == Card.Type.WILD_DRAW_FOUR) {
+                        hasDrawFour = true;
+                        drawFourIndex = i;
+                        break;
                     }
-                    currentPlayer.addCard(drawnCard);
                 }
-                drawTwoCounter = 0; // Reset the counter
-                moveToNextPlayer();
-                return true;
+                
+                if (hasDrawFour) {
+                    // CPU has a Wild Draw Four and stacks it
+                    System.out.println("CPU stacks Wild Draw Four!");
+                    playedSuccessfully = playCard(drawFourIndex);
+                    
+                    // If a wild card was played, choose a color
+                    if (playedSuccessfully) {
+                        Card.Color chosenColor = chooseBestColorForCpu(currentPlayer);
+                        currentColor = chosenColor;
+                        System.out.println("CPU chose color: " + chosenColor);
+                    }
+                    
+                    return playedSuccessfully;
+                } else {
+                    // CPU must draw the cards
+                    System.out.println("CPU must draw " + drawFourCounter + " cards due to Draw Four stack");
+                    for (int i = 0; i < drawFourCounter; i++) {
+                        Card drawnCard = deck.drawCard();
+                        if (drawnCard == null) {
+                            reshuffleDeck();
+                            drawnCard = deck.drawCard();
+                        }
+                        currentPlayer.addCard(drawnCard);
+                        System.out.println("CPU drew card: " + drawnCard);
+                    }
+                    drawFourCounter = 0; // Reset the counter
+                    System.out.println("Draw Four counter reset to 0");
+                    moveToNextPlayer();
+                    return true;
+                }
             }
             
-            // Check for any Wild Draw Four stacking
-            if (drawFourCounter > 0) {
-                // Draw cards and move to next player
-                System.out.println("CPU must draw " + drawFourCounter + " cards due to Draw Four stack");
-                for (int i = 0; i < drawFourCounter; i++) {
-                    Card drawnCard = deck.drawCard();
-                    if (drawnCard == null) {
-                        reshuffleDeck();
-                        drawnCard = deck.drawCard();
+            // Check for any Draw Two stacking
+            if (drawTwoCounter > 0) {
+                boolean hasDrawTwo = false;
+                int drawTwoIndex = -1;
+                
+                // Check if CPU has a Draw Two to play
+                for (int i = 0; i < currentPlayer.getHand().size(); i++) {
+                    Card card = currentPlayer.getHand().get(i);
+                    if (card.getType() == Card.Type.DRAW_TWO) {
+                        hasDrawTwo = true;
+                        drawTwoIndex = i;
+                        break;
                     }
-                    currentPlayer.addCard(drawnCard);
                 }
-                drawFourCounter = 0; // Reset the counter
-                moveToNextPlayer();
-                return true;
+                
+                if (hasDrawTwo) {
+                    // CPU has a Draw Two and stacks it
+                    System.out.println("CPU stacks Draw Two!");
+                    return playCard(drawTwoIndex);
+                } else {
+                    // Draw cards and move to next player
+                    System.out.println("CPU must draw " + drawTwoCounter + " cards due to Draw Two stack");
+                    for (int i = 0; i < drawTwoCounter; i++) {
+                        Card drawnCard = deck.drawCard();
+                        if (drawnCard == null) {
+                            reshuffleDeck();
+                            drawnCard = deck.drawCard();
+                        }
+                        currentPlayer.addCard(drawnCard);
+                        System.out.println("CPU drew card: " + drawnCard);
+                    }
+                    drawTwoCounter = 0; // Reset the counter
+                    System.out.println("Draw Two counter reset to 0");
+                    moveToNextPlayer();
+                    return true;
+                }
             }
             
             Card topCard = getTopCard();
             Card cardToPlay = null;
             int cardIndex = -1;
+            boolean foundValidCard = false;
             
-            // Find a valid card to play (but don't play it yet)
-            for (int i = 0; i < currentPlayer.getHand().size(); i++) {
-                Card card = currentPlayer.getHand().get(i);
-                if (card.canBePlayedOn(topCard)) {
-                    cardToPlay = card;
-                    cardIndex = i;
-                    break;
+            System.out.println("Top card: " + topCard + ", Current color: " + currentColor);
+            
+            // FIX FOR WILD CARD COLOR MATCHING: Check if current color matches any card in hand
+            if (topCard.getType() == Card.Type.WILD || topCard.getType() == Card.Type.WILD_DRAW_FOUR) {
+                // Look for cards that match the current color first
+                for (int i = 0; i < currentPlayer.getHand().size(); i++) {
+                    Card card = currentPlayer.getHand().get(i);
+                    if (card.getColor() == currentColor || card.getColor() == Card.Color.WILD) {
+                        cardToPlay = card;
+                        cardIndex = i;
+                        foundValidCard = true;
+                        System.out.println("Found card matching current color: " + card);
+                        break;
+                    }
+                }
+            } else {
+                // Regular playability check by card type or number
+                for (int i = 0; i < currentPlayer.getHand().size(); i++) {
+                    Card card = currentPlayer.getHand().get(i);
+                    if (card.getType() != Card.Type.WILD_DRAW_FOUR && card.canBePlayedOn(topCard)) {
+                        cardToPlay = card;
+                        cardIndex = i;
+                        foundValidCard = true;
+                        break;
+                    }
+                }
+            }
+            
+            // If no regular valid card found, try Wild Draw Four as a last resort
+            if (!foundValidCard) {
+                for (int i = 0; i < currentPlayer.getHand().size(); i++) {
+                    Card card = currentPlayer.getHand().get(i);
+                    if (card.getType() == Card.Type.WILD_DRAW_FOUR) {
+                        // We should only play Wild Draw Four if we have no other valid cards
+                        // This should pass the validation in playCard()
+                        cardToPlay = card;
+                        cardIndex = i;
+                        break;
+                    }
                 }
             }
             
@@ -515,11 +643,24 @@ public class Game {
                 // Play the card using the playCard method to ensure proper game updates
                 playedSuccessfully = playCard(cardIndex);
                 
-                // If a wild card was played, choose a color
-                if (playedSuccessfully && (cardToPlay.getType() == Card.Type.WILD || cardToPlay.getType() == Card.Type.WILD_DRAW_FOUR)) {
-                    Card.Color chosenColor = chooseBestColorForCpu(currentPlayer);
-                    currentColor = chosenColor;
-                    System.out.println("CPU chose color: " + chosenColor);
+                if (playedSuccessfully) {
+                    // If a wild card was played, choose a color
+                    if (cardToPlay.getType() == Card.Type.WILD || cardToPlay.getType() == Card.Type.WILD_DRAW_FOUR) {
+                        Card.Color chosenColor = chooseBestColorForCpu(currentPlayer);
+                        currentColor = chosenColor;
+                        System.out.println("CPU chose color: " + chosenColor);
+                    }
+                } else {
+                    // If the card couldn't be played (failed validation), draw a card instead
+                    System.out.println("CPU failed to play " + cardToPlay + ", drawing a card instead");
+                    Card drawnCard = deck.drawCard();
+                    if (drawnCard == null) {
+                        reshuffleDeck();
+                        drawnCard = deck.drawCard();
+                    }
+                    currentPlayer.addCard(drawnCard);
+                    System.out.println("CPU drew: " + drawnCard);
+                    moveToNextPlayer();
                 }
             } else {
                 // No valid card, draw one
@@ -532,9 +673,12 @@ public class Game {
                 }
                 
                 currentPlayer.addCard(drawnCard);
+                System.out.println("CPU drew: " + drawnCard);
                 
                 // Check if the drawn card can be played
-                if (drawnCard.canBePlayedOn(topCard)) {
+                if (drawnCard.canBePlayedOn(topCard) || 
+                   (topCard.getType() == Card.Type.WILD || topCard.getType() == Card.Type.WILD_DRAW_FOUR) && 
+                   (drawnCard.getColor() == currentColor || drawnCard.getColor() == Card.Color.WILD)) {
                     System.out.println("CPU can play the drawn card: " + drawnCard);
                     cardIndex = currentPlayer.getHand().size() - 1;
                     
@@ -630,6 +774,7 @@ public class Game {
     
     public void setCurrentColor(Card.Color color) {
         this.currentColor = color;
+        System.out.println("Color set to: " + color);
     }
     
     public boolean isClockwise() {
@@ -654,10 +799,18 @@ public class Game {
     
     public void resetDrawFourCounter() {
         this.drawFourCounter = 0;
+        System.out.println("Draw Four counter reset to 0");
     }
     
     public void resetDrawTwoCounter() {
         this.drawTwoCounter = 0;
+        System.out.println("Draw Two counter reset to 0");
+    }
+    
+    // Method to increment drawFourCounter (for UI control)
+    public void incrementDrawFourCounter(int amount) {
+        this.drawFourCounter += amount;
+        System.out.println("Draw Four counter increased by " + amount + " to " + this.drawFourCounter);
     }
     
     // Make deck accessible for direct draw operations

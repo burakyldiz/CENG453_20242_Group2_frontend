@@ -43,6 +43,8 @@ public class Player {
         if (hand.size() > 1) {
             hasCalledUno = false;
         }
+        // Update the game UI
+        System.out.println("Player " + name + " has " + hand.size() + " cards");
     }
     
     public Card playCard(int index) {
