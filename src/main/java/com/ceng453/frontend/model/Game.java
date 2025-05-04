@@ -1,10 +1,71 @@
 package com.ceng453.frontend.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
 public class Game {
+    // Fallback inner Deck class in case of class loading issues
+    public static class DeckFallback {
+        private List<Card> cards;
+        
+        public DeckFallback() {
+            cards = new ArrayList<>();
+            initializeDeck();
+        }
+        
+        // Initialize a standard UNO deck
+        private void initializeDeck() {
+            // Add number cards (0-9) for each color
+            for (Card.Color color : new Card.Color[]{Card.Color.RED, Card.Color.YELLOW, Card.Color.GREEN, Card.Color.BLUE}) {
+                // Add one zero card per color
+                cards.add(new Card(color, 0));
+                
+                // Add two of each number 1-9 per color
+                for (int i = 1; i <= 9; i++) {
+                    cards.add(new Card(color, i));
+                    cards.add(new Card(color, i));
+                }
+                
+                // Add two of each special card per color (except wilds)
+                cards.add(new Card(color, Card.Type.SKIP));
+                cards.add(new Card(color, Card.Type.SKIP));
+                cards.add(new Card(color, Card.Type.REVERSE));
+                cards.add(new Card(color, Card.Type.REVERSE));
+                cards.add(new Card(color, Card.Type.DRAW_TWO));
+                cards.add(new Card(color, Card.Type.DRAW_TWO));
+            }
+            
+            // Add wild cards (4 of each)
+            for (int i = 0; i < 4; i++) {
+                cards.add(new Card(Card.Color.WILD, Card.Type.WILD));
+                cards.add(new Card(Card.Color.WILD, Card.Type.WILD_DRAW_FOUR));
+            }
+            
+            // Shuffle the deck
+            shuffle();
+        }
+        
+        public Card drawCard() {
+            if (cards.isEmpty()) {
+                return null;
+            }
+            return cards.remove(0);
+        }
+        
+        public void shuffle() {
+            Collections.shuffle(cards);
+        }
+        
+        public boolean isEmpty() {
+            return cards.isEmpty();
+        }
+        
+        public void removeWildCards() {
+            cards.removeIf(card -> card.getColor() == Card.Color.WILD);
+        }
+    }
     private List<Player> players;
     private Deck deck;
     private List<Card> discardPile;
@@ -18,7 +79,17 @@ public class Game {
     
     public Game() {
         this.players = new ArrayList<>();
-        this.deck = new Deck();
+        
+        // Try to create a regular Deck, but use fallback if it fails
+        try {
+            // First attempt to use the regular Deck class
+            this.deck = new Deck();
+        } catch (NoClassDefFoundError | Exception e) {
+            // If Deck class can't be loaded, use our fallback implementation
+            System.out.println("Using fallback deck implementation");
+            this.deck = new DeckAdapter(new DeckFallback());
+        }
+        
         this.discardPile = new ArrayList<>();
         this.isClockwise = true;
         this.currentPlayerIndex = 0;
@@ -155,14 +226,18 @@ public class Game {
         }
         
         // Special rule for Wild Draw Four - can only be played if no other valid card
-        // Skip this check if there's a Draw Four stack already (for stacking Wild Draw Four)
-        if (card.getType() == Card.Type.WILD_DRAW_FOUR && drawFourCounter == 0) {
-            if (hasValidCardOtherThanWildDrawFour(currentPlayer, topCard)) {
+        // Handle Wild Draw Four according to our custom rules:
+        // 1. Can be played when there are no other playable cards
+        // 2. Can be played on another Wild Draw Four (when drawFourCounter > 0)
+        if (card.getType() == Card.Type.WILD_DRAW_FOUR) {
+            if (drawFourCounter > 0) {
+                // Rule 2: Allow stacking Wild Draw Four on another Wild Draw Four
+                System.out.println("Playing Wild Draw Four on another Wild Draw Four");
+                // Continue with play - this is allowed
+            } else if (hasValidCardOtherThanWildDrawFour(currentPlayer, topCard)) {
+                // Rule 1: Cannot play Wild Draw Four when other valid cards exist
                 System.out.println("Cannot play Wild Draw Four when you have other valid cards to play.");
                 return false;
-            }
-            else {
-                return true;
             }
         }
         
@@ -189,7 +264,7 @@ public class Game {
     }
     
     // Check if player has a valid card other than Wild Draw Four
-    private boolean hasValidCardOtherThanWildDrawFour(Player player, Card topCard) {
+    public boolean hasValidCardOtherThanWildDrawFour(Player player, Card topCard) {
         for (Card card : player.getHand()) {
             if (card.getType() != Card.Type.WILD_DRAW_FOUR) {
                 if (topCard.getType() == Card.Type.WILD || topCard.getType() == Card.Type.WILD_DRAW_FOUR) {

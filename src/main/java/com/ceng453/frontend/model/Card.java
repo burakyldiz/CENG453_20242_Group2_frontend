@@ -57,8 +57,14 @@ public class Card {
     
     // Helper method to check if this card can be played on top of another card
     public boolean canBePlayedOn(Card topCard) {
-        // Wild and Wild Draw Four can always be played
+        // Wild cards can always be played
         if (this.type == Type.WILD) {
+            return true;
+        }
+        
+        // Wild Draw Four cards are always playable from a Card perspective
+        // (special rules are enforced in Game.playCard and GameBoardController)
+        if (this.type == Type.WILD_DRAW_FOUR) {
             return true;
         }
         

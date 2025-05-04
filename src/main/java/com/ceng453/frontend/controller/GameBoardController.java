@@ -33,7 +33,10 @@ import org.springframework.stereotype.Controller;
 
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 public class GameBoardController {
@@ -175,12 +178,37 @@ public class GameBoardController {
                 colorSelectionPane.setVisible(false);
             }
             waitingForColorSelection = false;
+            
+            // Store the current state before resetting
+            boolean wasWildDrawFourPlayed = wildDrawFourPlayed;
+            
+            // Reset wild card state
             wildDrawFourPlayed = false;
             lastPlayedCard = null;
             
-            // Move to the next player's turn after color selection
+            // After playing a Wild card and selecting a color, move to the next player's turn
+            // First, inform the player about the color choice
+            showMessage("Color set to: " + color);
+            
+            // Move to the next player
             game.moveToNextPlayer();
+            
+            // If a Wild Draw Four was played, apply the penalty to the next player
+            if (wasWildDrawFourPlayed) {
+                // Make the next player draw 4 cards (unless they can stack another Wild Draw Four)
+                game.handleDrawFourStack();
+                System.out.println("Wild Draw Four penalty applied to next player");
+            }
+            
+            // Update the UI after applying the penalty
             updateGameUI();
+            
+            // Force a pause to make turn changes more visible
+            try {
+                Thread.sleep(500);  // Short pause for UI update
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
             
             // Debug the game state after color selection
             debugGameState();
@@ -206,6 +234,9 @@ public class GameBoardController {
             // Keep wild cards in the deck for normal gameplay
             // game.getDeck().removeWildCards();  // Commented out to ensure wild cards stay in the deck
             
+            // Preload all card images to prevent loading issues
+            preloadCardImages();
+            
             // Hide color selection pane initially
             if (colorSelectionPane != null) {
                 colorSelectionPane.setVisible(false);
@@ -216,7 +247,7 @@ public class GameBoardController {
             // Initial update of all UI elements
             updateGameUI();
             
-            // Set up cheat buttons if they exist in FXML
+            // Set up cheat buttons
             setupCheatButtons();
             
             // Automatically play for CPU if they start first
@@ -345,6 +376,11 @@ public class GameBoardController {
     
     // Added this method to debug game state
     private void debugGameState() {
+        // Get current player to check for Wild Draw Four playability
+        Player currentPlayer = game.getPlayers().get(game.getCurrentPlayerIndex());
+        boolean canPlayWildDrawFour = game.getDrawFourCounter() > 0 || 
+                                     !game.hasValidCardOtherThanWildDrawFour(currentPlayer, game.getTopCard());
+        
         System.out.println("------ GAME STATE DEBUG ------");
         System.out.println("Current Player: " + game.getCurrentPlayerIndex() + " (" + 
                            game.getPlayers().get(game.getCurrentPlayerIndex()).getName() + ")");
@@ -355,6 +391,7 @@ public class GameBoardController {
         System.out.println("Clockwise: " + game.isClockwise());
         System.out.println("Waiting for color selection: " + waitingForColorSelection);
         System.out.println("WildDrawFour played: " + wildDrawFourPlayed);
+        System.out.println("Can play Wild Draw Four: " + canPlayWildDrawFour);
         System.out.println("-----------------------------");
     }
     
@@ -566,23 +603,113 @@ public class GameBoardController {
         }
     }
     
+    // Cache for card images to prevent reloading issues
+    private static final Map<String, Image> cardImageCache = new HashMap<>();
+    // Hard-coded fallback images for problematic cards
+    private static final String[] KNOWN_PROBLEMATIC_CARDS = {
+        "wild-draw-four.png", "wild.png",
+        "red_draw-two.png", "blue_draw-two.png", "green_draw-two.png", "yellow_draw-two.png",
+        "red_skip.png", "blue_skip.png", "green_skip.png", "yellow_skip.png",
+        "red_reverse.png", "blue_reverse.png", "green_reverse.png", "yellow_reverse.png"
+    };
+    
+    // Preload all card images at startup to avoid loading issues later
+    private void preloadCardImages() {
+        System.out.println("Preloading card images...");
+        // Preload all card images for each color and type
+        for (Card.Color color : Card.Color.values()) {
+            if (color == Card.Color.WILD) continue; // Handle wild cards separately
+            
+            // Number cards (0-9)
+            for (int i = 0; i < 10; i++) {
+                String imagePath = CARD_IMAGES_PATH + color.toString() + "_" + i + ".png";
+                loadAndCacheImage(imagePath);
+            }
+            
+            // Action cards
+            loadAndCacheImage(CARD_IMAGES_PATH + color.toString() + "_skip.png");
+            loadAndCacheImage(CARD_IMAGES_PATH + color.toString() + "_reverse.png");
+            loadAndCacheImage(CARD_IMAGES_PATH + color.toString() + "_draw-two.png");
+        }
+        
+        // Wild cards
+        loadAndCacheImage(CARD_IMAGES_PATH + "wild.png");
+        loadAndCacheImage(CARD_IMAGES_PATH + "wild-draw-four.png");
+        
+        System.out.println("Card image preloading complete. Cached " + cardImageCache.size() + " images.");
+    }
+    
+    private void loadAndCacheImage(String imagePath) {
+        try {
+            InputStream imageStream = getClass().getResourceAsStream(imagePath);
+            if (imageStream != null) {
+                Image image = new Image(imageStream);
+                cardImageCache.put(imagePath, image);
+            } else {
+                // Try alternative naming for known problematic cards
+                String fileName = imagePath.substring(imagePath.lastIndexOf("/") + 1);
+                if (Arrays.asList(KNOWN_PROBLEMATIC_CARDS).contains(fileName)) {
+                    // Try alternative naming (with dash instead of underscore)
+                    String altPath = imagePath.replace("_", "-");
+                    imageStream = getClass().getResourceAsStream(altPath);
+                    if (imageStream != null) {
+                        Image image = new Image(imageStream);
+                        cardImageCache.put(imagePath, image); // Cache with original path for lookup
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to preload image: " + imagePath + ", " + e.getMessage());
+        }
+    }
+    
     private ImageView createCardImageView(Card card) {
         try {
             String imageName = card.getImageFileName();
             String imagePath = CARD_IMAGES_PATH + imageName;
             
-            //System.out.println("Loading card image: " + imagePath);
-            InputStream imageStream = getClass().getResourceAsStream(imagePath);
+            // Check cache first to avoid resource stream issues after game restarts
+            Image cardImage = cardImageCache.get(imagePath);
             
-            if (imageStream != null) {
-                return new ImageView(new Image(imageStream));
+            if (cardImage == null) {
+                // Try loading with alternative naming (handling inconsistencies)
+                String altImageName = imageName.replace("_", "-");
+                String altImagePath = CARD_IMAGES_PATH + altImageName;
+                cardImage = cardImageCache.get(altImagePath);
+                
+                if (cardImage == null) {
+                    // Last attempt - load directly
+                    InputStream imageStream = getClass().getResourceAsStream(imagePath);
+                    
+                    if (imageStream != null) {
+                        cardImage = new Image(imageStream);
+                        // Cache for future use
+                        cardImageCache.put(imagePath, cardImage);
+                    } else {
+                        // Try alternative path with dash instead of underscore
+                        imageStream = getClass().getResourceAsStream(altImagePath);
+                        if (imageStream != null) {
+                            cardImage = new Image(imageStream);
+                            cardImageCache.put(imagePath, cardImage);
+                        } else {
+                            // Only log warning once per missing image
+                            if (!cardImageCache.containsKey(imagePath)) {
+                                System.err.println("Card image not found: " + imagePath);
+                                cardImageCache.put(imagePath, null); // Mark as attempted
+                            }
+                            return createCardPlaceholder(card);
+                        }
+                    }
+                }
+            }
+            
+            if (cardImage != null) {
+                return new ImageView(cardImage);
             } else {
-                System.err.println("Card image not found: " + imagePath);
                 return createCardPlaceholder(card);
             }
         } catch (Exception e) {
             System.err.println("Error creating card image view: " + e.getMessage());
-            e.printStackTrace();
             return createCardPlaceholder(card);
         }
     }
@@ -672,128 +799,146 @@ public class GameBoardController {
     }
     
     private void handleCardClick(Card card, int cardIndex) {
+        // Check if we're waiting for color selection - this takes precedence
         if (waitingForColorSelection) {
             showMessage("Please select a color first!");
             return;
         }
         
-        if (isHumanTurn()) {
-            Card topCard = game.getTopCard();
-            
-            // Check if there's a Draw Four counter active
-            if (game.getDrawFourCounter() > 0) {
-                // Can only play a Wild Draw Four on a Draw Four stack
-                if (card.getType() == Card.Type.WILD_DRAW_FOUR) {
-                    lastPlayedCard = card;
-                    wildDrawFourPlayed = true;
-                    
-                    // Remove the card from hand and add to discard pile
-                    boolean played = game.playCard(cardIndex);
-                    if (!played) {
-                        showMessage("Failed to play Wild Draw Four!");
-                        return;
-                    }
-                    
-                    // Show color selection pane
-                    if (colorSelectionPane != null) {
-                        colorSelectionPane.setVisible(true);
-                    }
-                    waitingForColorSelection = true;
-                    showMessage("Select a color for your Wild Draw Four");
-                } else {
-                    showMessage("You must play a Wild Draw Four or draw " + game.getDrawFourCounter() + " cards!");
+        // Check if it's the human player's turn
+        if (!isHumanTurn()) {
+            showMessage("It's not your turn!");
+            return;
+        }
+        
+        // Now proceed with card handling logic
+        Card topCard = game.getTopCard();
+        
+        // Check if there's a Draw Four counter active
+        if (game.getDrawFourCounter() > 0) {
+            // Can only play a Wild Draw Four on a Draw Four stack
+            if (card.getType() == Card.Type.WILD_DRAW_FOUR) {
+                lastPlayedCard = card;
+                wildDrawFourPlayed = true;
+                
+                // Remove the card from hand and add to discard pile
+                boolean played = game.playCard(cardIndex);
+                if (!played) {
+                    showMessage("Failed to play Wild Draw Four!");
+                    return;
                 }
-                return;
-            }
-            
-            // Check if there's a Draw Two counter active
-            if (game.getDrawTwoCounter() > 0) {
-                // Can only play a Draw Two on a Draw Two stack
-                if (card.getType() == Card.Type.DRAW_TWO) {
-                    boolean played = game.playCard(cardIndex);
-                    if (played) {
-                        updateGameUI();
-                    } else {
-                        showMessage("Failed to play Draw Two!");
-                    }
-                } else {
-                    showMessage("You must play a Draw Two or draw " + game.getDrawTwoCounter() + " cards!");
+                
+                // Show color selection pane
+                if (colorSelectionPane != null) {
+                    colorSelectionPane.setVisible(true);
                 }
-                return;
+                waitingForColorSelection = true;
+                showMessage("Select a color for your Wild Draw Four");
+            } else {
+                showMessage("You must play a Wild Draw Four or draw " + game.getDrawFourCounter() + " cards!");
             }
-            
-            // Check if the card can be played
-            if (card.canBePlayedOn(topCard)) {
-                // Special check for Wild Draw Four: verify player has no other matching cards
-                if (card.getType() == Card.Type.WILD_DRAW_FOUR) {
-                    // Check if player has any cards matching the current color
-                    boolean hasMatchingCards = false;
-                    for (Card handCard : game.getPlayers().get(0).getHand()) {
-                        // Skip the Wild Draw Four card itself
-                        if (handCard == card) continue;
-                        
-                        // Check if card matches current color or is a wild (not draw four)
-                        if (handCard.getColor() == game.getCurrentColor() || 
-                            (handCard.getColor() == Card.Color.WILD && handCard.getType() != Card.Type.WILD_DRAW_FOUR)) {
-                            hasMatchingCards = true;
-                            break;
-                        }
+            return;
+        }
+        
+        // Check if there's a Draw Two counter active
+        if (game.getDrawTwoCounter() > 0) {
+            // Can only play a Draw Two on a Draw Two stack
+            if (card.getType() == Card.Type.DRAW_TWO) {
+                boolean played = game.playCard(cardIndex);
+                if (played) {
+                    updateGameUI();
+                    // Move to next player after playing Draw Two
+                    game.moveToNextPlayer();
+                    updateGameUI();
+                    if (!isHumanTurn()) {
+                        playCPUTurn();
                     }
-                    
-                    // If player has matching cards, they can't play Wild Draw Four
-                    if (hasMatchingCards) {
-                        showMessage("You cannot play Wild Draw Four when you have cards matching the current color!");
-                        return;
-                    }
-                    
-                    // Wild Draw Four is valid - set flag and continue
-                    lastPlayedCard = card;
-                    wildDrawFourPlayed = true;
-                } else if (card.getType() == Card.Type.WILD) {
-                    // Regular wild card is always playable
-                    lastPlayedCard = card;
-                    wildDrawFourPlayed = false;
-                    
-                    // Play the card if it's a standard Wild card
-                    if (card.getType() == Card.Type.WILD) {
-                        boolean played = game.playCard(cardIndex);
-                        if (!played) {
-                            showMessage("Failed to play Wild card!");
-                            return;
-                        }
-                    }
-                    
-                    // Show color selection pane
-                    if (colorSelectionPane != null) {
-                        colorSelectionPane.setVisible(true);
-                    }
-                    waitingForColorSelection = true;
-                    showMessage("Select a color for your wild card");
                 } else {
-                    // For non-wild cards, play immediately
-                    boolean played = game.playCard(cardIndex);
-                    
-                    if (played) {
-                        // Check if the player has won
-                        if (game.getPlayers().get(0).getHand().isEmpty()) {
-                            handleGameOver(game.getPlayers().get(0));
-                        } else {
-                            // If the player has only one card left and hasn't called UNO
-                            if (game.getPlayers().get(0).getHand().size() == 1 && 
-                                !game.getPlayers().get(0).hasCalledUno()) {
-                                showMessage("Don't forget to call UNO!");
-                            }
-                            
-                            // Update UI and start CPU turns
-                            updateGameUI();
-                        }
-                    }
+                    showMessage("Failed to play Draw Two!");
                 }
             } else {
-                showMessage("You can't play this card!");
+                showMessage("You must play a Draw Two or draw " + game.getDrawTwoCounter() + " cards!");
+            }
+            return;
+        }
+        
+        // Check if the card can be played
+        if (card.canBePlayedOn(topCard)) {
+            // Special check for Wild Draw Four: verify player has no other matching cards
+            if (card.getType() == Card.Type.WILD_DRAW_FOUR) {
+                // Check if player has any valid cards to play other than Wild Draw Four
+                if (game.hasValidCardOtherThanWildDrawFour(game.getPlayers().get(0), topCard)) {
+                    showMessage("You cannot play Wild Draw Four when you have other valid cards to play!");
+                    return;
+                }
+                
+                // Debug logging
+                System.out.println("Wild Draw Four is playable - no other valid cards found");
+                
+                // Wild Draw Four is valid - set flag and continue
+                lastPlayedCard = card;
+                wildDrawFourPlayed = true;
+                
+                // Actually play the Wild Draw Four card
+                boolean played = game.playCard(cardIndex);
+                if (!played) {
+                    showMessage("Failed to play Wild Draw Four card!");
+                    return;
+                }
+                System.out.println("Successfully played Wild Draw Four card");
+                
+                // Show color selection pane for the Wild Draw Four card
+                if (colorSelectionPane != null) {
+                    colorSelectionPane.setVisible(true);
+                }
+                waitingForColorSelection = true;
+                showMessage("Select a color for your Wild Draw Four card");
+            } else if (card.getType() == Card.Type.WILD) {
+                // Regular wild card is always playable
+                lastPlayedCard = card;
+                wildDrawFourPlayed = false;
+                
+                // Play the standard Wild card
+                boolean played = game.playCard(cardIndex);
+                if (!played) {
+                    showMessage("Failed to play Wild card!");
+                    return;
+                }
+                
+                // Show color selection pane
+                if (colorSelectionPane != null) {
+                    colorSelectionPane.setVisible(true);
+                }
+                waitingForColorSelection = true;
+                showMessage("Select a color for your wild card");
+            } else {
+                // For non-wild cards, play immediately
+                boolean played = game.playCard(cardIndex);
+                
+                if (played) {
+                    // Check if the player has won
+                    if (game.getPlayers().get(0).getHand().isEmpty()) {
+                        handleGameOver(game.getPlayers().get(0));
+                    } else {
+                        // If the player has only one card left and hasn't called UNO
+                        if (game.getPlayers().get(0).getHand().size() == 1 && 
+                            !game.getPlayers().get(0).hasCalledUno()) {
+                            showMessage("Don't forget to call UNO!");
+                        }
+                        
+                        // Move to next player and update UI
+                        game.moveToNextPlayer();
+                        updateGameUI();
+                        
+                        // If it's a CPU's turn now, play it
+                        if (!isHumanTurn()) {
+                            playCPUTurn();
+                        }
+                    }
+                }
             }
         } else {
-            showMessage("It's not your turn!");
+            showMessage("You can't play this card!");
         }
     }
     
@@ -910,7 +1055,13 @@ public class GameBoardController {
                 if (hasPlayableCard) {
                     // Mark that player has called UNO
                     player.setHasCalledUno(true);
-                    showMessage("You called UNO!");
+                    // Show message with player name
+                    String playerName = player.getName();
+                    showMessage(playerName + " has called UNO!");
+                    // Also update the game state label to make it more visible
+                    if (gameStateLabel != null) {
+                        gameStateLabel.setText(playerName + " has called UNO!");
+                    }
                     // Update UI
                     updateGameUI();
                 } else {
