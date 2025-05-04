@@ -82,4 +82,18 @@ public class Deck {
         // Fallback in case all cards are Wild Draw Four (extremely unlikely)
         return drawCard();
     }
+    
+    // Method to filter out wild cards from the deck
+    public void removeWildCards() {
+        List<Card> filteredCards = new ArrayList<>();
+        
+        for (Card card : cards) {
+            if (card.getType() != Card.Type.WILD && card.getType() != Card.Type.WILD_DRAW_FOUR) {
+                filteredCards.add(card);
+            }
+        }
+        
+        this.cards = filteredCards;
+        System.out.println("Wild cards have been removed from the deck. New deck size: " + cards.size());
+    }
 }

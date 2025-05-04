@@ -58,7 +58,7 @@ public class Card {
     // Helper method to check if this card can be played on top of another card
     public boolean canBePlayedOn(Card topCard) {
         // Wild and Wild Draw Four can always be played
-        if (this.type == Type.WILD || this.type == Type.WILD_DRAW_FOUR) {
+        if (this.type == Type.WILD) {
             return true;
         }
         
