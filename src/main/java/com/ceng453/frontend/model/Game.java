@@ -478,13 +478,20 @@ public class Game {
         }
     }
     
-    // Method to move to the next player's turn
+    // Method to move to the next player and handle related logic
     public void moveToNextPlayer() {
+        // Move to the next player based on direction
         if (isClockwise) {
             currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
         } else {
             currentPlayerIndex = (currentPlayerIndex + players.size() - 1) % players.size();
         }
+        
+        // If there's a draw four penalty, current player must draw cards
+        if (drawFourCounter > 0) {
+            handleDrawFourStack();
+        }
+        
         System.out.println("Moving to next player: " + currentPlayerIndex + " (" + players.get(currentPlayerIndex).getName() + ")");
     }
     
