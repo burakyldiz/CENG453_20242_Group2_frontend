@@ -3,6 +3,7 @@ package com.ceng453.frontend.controller;
 import com.ceng453.frontend.model.Card;
 import com.ceng453.frontend.model.Game;
 import com.ceng453.frontend.model.Player;
+import com.ceng453.frontend.service.ApiService;
 import com.ceng453.frontend.ui.SceneManager;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
@@ -31,6 +32,7 @@ import javafx.scene.effect.ColorAdjust;
 import org.springframework.stereotype.Controller;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 @Controller
@@ -41,6 +43,7 @@ public class GameBoardController {
     
     // Spring-injected dependencies
     private final SceneManager sceneManager;
+    private final ApiService apiService;
     
     // Game state
     private Game game;
@@ -76,8 +79,9 @@ public class GameBoardController {
     @FXML private Button unoButton;
     @FXML private Button fullscreenButton;
     
-    public GameBoardController(SceneManager sceneManager) {
+    public GameBoardController(SceneManager sceneManager, ApiService apiService) {
         this.sceneManager = sceneManager;
+        this.apiService = apiService;
     }
     
     private boolean isHumanTurn() {
@@ -97,8 +101,8 @@ public class GameBoardController {
             alert.setContentText(message);
             alert.showAndWait();
             
-            // TODO: Record game result in the database
-            // This would need the ApiService to be injected
+            // Record game result in the database
+            recordGameResult(winner);
             
             // Return to main menu
             sceneManager.showMainMenuScene();
@@ -983,7 +987,46 @@ public class GameBoardController {
         
         pause.play();
     }
-    
+    private void recordGameResult(Player winner) {
+        try {
+            // Create a list for player IDs
+            List<Long> playerIds = new ArrayList<>();
+            
+            // For a CPU win, we'll use a simplified approach with fixed IDs
+            // Add fixed player IDs that will work with your backend
+            Long humanPlayerId = 1L; // Use a valid ID that exists in your database
+            
+            // Add all players to the list
+            playerIds.add(humanPlayerId); // Human player (ID 1)
+            playerIds.add(2L);  // CPU 1 (ID 2)
+            playerIds.add(3L);  // CPU 2 (ID 3)
+            playerIds.add(4L);  // CPU 3 (ID 4)
+            
+            // Determine winner ID - make sure it matches one of the IDs in playerIds
+            Long winnerId;
+            if (winner.isHuman()) {
+                winnerId = humanPlayerId; // Human player won
+            } else {
+                // CPU player won
+                int winnerIndex = game.getPlayers().indexOf(winner);
+                // Map the index to the corresponding ID in playerIds
+                winnerId = Long.valueOf(winnerIndex + 1); // +1 because our IDs start at 1
+            }
+            
+            // Debug info
+            System.out.println("Recording game result: Winner ID = " + winnerId + ", Player IDs = " + playerIds);
+            
+            // Call the API service to record the game result
+            apiService.recordGameResult(winnerId, playerIds)
+                .subscribe(
+                    response -> System.out.println("Game result recorded successfully: " + response),
+                    error -> System.err.println("Error recording game result: " + error.getMessage())
+                );
+        } catch (Exception e) {
+            System.err.println("Failed to record game result: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
     // Helper method to update turn indicators
     private void updateTurnIndicators() {
         // Define the styles once outside the lambdas
