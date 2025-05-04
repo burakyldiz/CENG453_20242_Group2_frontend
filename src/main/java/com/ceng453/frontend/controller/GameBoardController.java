@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import javafx.scene.Cursor;
 import java.util.Map;
 
 @Controller
@@ -190,8 +191,13 @@ public class GameBoardController {
             // First, inform the player about the color choice
             showMessage("Color set to: " + color);
             
-            // Move to the next player
-            game.moveToNextPlayer();
+            // Explicitly force a player turn change to prevent playing additional cards
+            if (game.getCurrentPlayerIndex() == 0) {
+                game.moveToNextPlayer();
+            }
+            
+            // Update the UI to immediately reflect the turn change
+            updateGameUI();
             
             // If a Wild Draw Four was played, apply the penalty to the next player
             if (wasWildDrawFourPlayed) {
@@ -501,9 +507,16 @@ public class GameBoardController {
                         cardView.setEffect(null);
                     }
                     
-                    // Add click handler for player's cards
+                    // Add click handler for player's cards, but only if it's their turn
                     int cardIndex = hand.indexOf(card);
-                    cardView.setOnMouseClicked(event -> handleCardClick(card, cardIndex));
+                    if (isHumanTurn() && !waitingForColorSelection) {
+                        cardView.setOnMouseClicked(event -> handleCardClick(card, cardIndex));
+                        cardView.setCursor(Cursor.HAND); // Show hand cursor to indicate clickability
+                    } else {
+                        cardView.setOnMouseClicked(null); // Remove click handler when it's not player's turn
+                        cardView.setCursor(Cursor.DEFAULT); // Use default cursor
+                        cardView.setOpacity(0.7); // Make cards appear slightly faded when not playable
+                    }
                     
                     playerHandPane.getChildren().add(cardView);
                 }
