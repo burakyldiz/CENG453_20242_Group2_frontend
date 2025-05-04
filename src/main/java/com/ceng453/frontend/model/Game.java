@@ -161,6 +161,9 @@ public class Game {
                 System.out.println("Cannot play Wild Draw Four when you have other valid cards to play.");
                 return false;
             }
+            else {
+                return true;
+            }
         }
         
         // Play the card
@@ -595,7 +598,7 @@ public class Game {
                 
                 // Special handling for wild cards on top
                 boolean isPlayable;
-                if (topCard.getType() == Card.Type.WILD || topCard.getType() == Card.Type.WILD_DRAW_FOUR) {
+                if (topCard.getType() == Card.Type.WILD || topCard.getType() == Card.Type.WILD_DRAW_FOUR && drawFourCounter == 0) {
                     // Match against current color for wild cards
                     isPlayable = (card.getColor() == currentColor || card.getColor() == Card.Color.WILD);
                 } else {
