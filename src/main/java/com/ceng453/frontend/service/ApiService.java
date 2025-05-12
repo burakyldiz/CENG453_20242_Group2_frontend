@@ -22,87 +22,79 @@ public class ApiService {
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
 
-    public ApiService(@Value("${api.base-url:https://ceng453-group2-uno.onrender.com}") String apiBaseUrl) {
+    public ApiService(@Value("${api.base-url:https://ceng453-20242-group2-backend.onrender.com}") String apiBaseUrl) {
         this.webClient = WebClient.builder()
                 .baseUrl(apiBaseUrl)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
         this.objectMapper = new ObjectMapper();
+        System.out.println("ApiService initialized with base URL: " + apiBaseUrl);
     }
 
     // User Authentication Methods
     public Mono<String> register(String username, String email, String password) {
-        Map<String, String> requestBody = new HashMap<>();
-        requestBody.put("username", username);
-        requestBody.put("email", email);
-        requestBody.put("password", password);
+        Map<String, String> request = new HashMap<>();
+        request.put("username", username);
+        request.put("email", email);
+        request.put("password", password);
 
         return webClient.post()
                 .uri("/users/register")
-                .bodyValue(requestBody)
+                .bodyValue(request)
                 .retrieve()
                 .bodyToMono(String.class)
                 .onErrorResume(WebClientResponseException.class, ex -> {
-                    System.err.println("Register error: " + ex.getMessage() + ", Response: " + ex.getResponseBodyAsString());
-                    return Mono.just("Error: " + ex.getResponseBodyAsString());
-                })
-                .onErrorResume(Exception.class, ex -> {
-                    System.err.println("Unexpected error during registration: " + ex.getMessage());
-                    ex.printStackTrace();
-                    return Mono.just("Error: Connection failed - " + ex.getMessage());
+                    String errorMessage = ex.getResponseBodyAsString();
+                    System.err.println("Registration error: " + errorMessage);
+                    return Mono.just("Error: " + errorMessage);
                 });
     }
 
     public Mono<String> login(String username, String password) {
-        Map<String, String> requestBody = new HashMap<>();
-        requestBody.put("username", username);
-        requestBody.put("password", password);
-
-        System.out.println("Attempting login for user: " + username + " to backend API");
+        Map<String, String> request = new HashMap<>();
+        request.put("username", username);
+        request.put("password", password);
 
         return webClient.post()
                 .uri("/users/login")
-                .bodyValue(requestBody)
+                .bodyValue(request)
                 .retrieve()
                 .bodyToMono(String.class)
-                .doOnNext(response -> System.out.println("Login response: " + response))
                 .onErrorResume(WebClientResponseException.class, ex -> {
-                    System.err.println("Login error: " + ex.getMessage() + ", Response: " + ex.getResponseBodyAsString());
-                    return Mono.just("Error: " + ex.getResponseBodyAsString());
-                })
-                .onErrorResume(Exception.class, ex -> {
-                    System.err.println("Unexpected error during login: " + ex.getMessage());
-                    ex.printStackTrace();
-                    return Mono.just("Error: Connection failed - " + ex.getMessage());
+                    String errorMessage = ex.getResponseBodyAsString();
+                    System.err.println("Login error: " + errorMessage);
+                    return Mono.just("Error: " + errorMessage);
                 });
     }
 
     public Mono<String> resetPassword(String email) {
-        Map<String, String> requestBody = new HashMap<>();
-        requestBody.put("email", email);
+        Map<String, String> request = new HashMap<>();
+        request.put("email", email);
 
         return webClient.post()
-                .uri("/password-reset/request")
-                .bodyValue(requestBody)
+                .uri("/password/reset-request")
+                .bodyValue(request)
                 .retrieve()
                 .bodyToMono(String.class)
                 .onErrorResume(WebClientResponseException.class, ex -> {
-                    return Mono.just("Error: " + ex.getResponseBodyAsString());
+                    String errorMessage = ex.getResponseBodyAsString();
+                    return Mono.just("Error: " + errorMessage);
                 });
     }
 
     public Mono<String> confirmPasswordReset(String token, String newPassword) {
-        Map<String, String> requestBody = new HashMap<>();
-        requestBody.put("token", token);
-        requestBody.put("newPassword", newPassword);
+        Map<String, String> request = new HashMap<>();
+        request.put("token", token);
+        request.put("newPassword", newPassword);
 
         return webClient.post()
-                .uri("/password-reset/confirm")
-                .bodyValue(requestBody)
+                .uri("/password/reset-confirm")
+                .bodyValue(request)
                 .retrieve()
                 .bodyToMono(String.class)
                 .onErrorResume(WebClientResponseException.class, ex -> {
-                    return Mono.just("Error: " + ex.getResponseBodyAsString());
+                    String errorMessage = ex.getResponseBodyAsString();
+                    return Mono.just("Error: " + errorMessage);
                 });
     }
 
@@ -113,7 +105,7 @@ public class ApiService {
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {})
                 .onErrorResume(WebClientResponseException.class, ex -> {
-                    System.err.println("Error fetching weekly leaderboard: " + ex.getMessage());
+                    System.err.println("Weekly leaderboard error: " + ex.getMessage());
                     return Mono.empty();
                 });
     }
@@ -124,7 +116,7 @@ public class ApiService {
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {})
                 .onErrorResume(WebClientResponseException.class, ex -> {
-                    System.err.println("Error fetching monthly leaderboard: " + ex.getMessage());
+                    System.err.println("Monthly leaderboard error: " + ex.getMessage());
                     return Mono.empty();
                 });
     }
@@ -135,24 +127,26 @@ public class ApiService {
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {})
                 .onErrorResume(WebClientResponseException.class, ex -> {
-                    System.err.println("Error fetching all-time leaderboard: " + ex.getMessage());
+                    System.err.println("All-time leaderboard error: " + ex.getMessage());
                     return Mono.empty();
                 });
     }
 
     // Game Results Method
     public Mono<String> recordGameResult(Long winnerId, List<Long> playerIds) {
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("winnerId", winnerId);
-        requestBody.put("playerIds", playerIds);
+        Map<String, Object> request = new HashMap<>();
+        request.put("winnerId", winnerId);
+        request.put("playerIds", playerIds);
 
         return webClient.post()
-                .uri("/games/record")
-                .bodyValue(requestBody)
+                .uri("/game/record-result")
+                .bodyValue(request)
                 .retrieve()
                 .bodyToMono(String.class)
                 .onErrorResume(WebClientResponseException.class, ex -> {
-                    return Mono.just("Error: " + ex.getResponseBodyAsString());
+                    String errorMessage = ex.getResponseBodyAsString();
+                    System.err.println("Record game result error: " + errorMessage);
+                    return Mono.just("Error: " + errorMessage);
                 });
     }
 

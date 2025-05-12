@@ -92,6 +92,9 @@ public class GameBoardController {
     @FXML private Button cheatWildButton;
     @FXML private Button cheatWildDrawFourButton;
     
+    // Flag to track if CPU turn sequence is already in progress
+    private boolean isCpuTurnInProgress = false;
+    
     public GameBoardController(SceneManager sceneManager, ApiService apiService) {
         this.sceneManager = sceneManager;
         this.apiService = apiService;
@@ -158,9 +161,8 @@ public class GameBoardController {
                 game.setCurrentColor(color);
                 System.out.println("Wild Draw Four color set to: " + color);
                 
-                // Increment the draw four counter
-                game.incrementDrawFourCounter(4);
-                System.out.println("Draw Four counter set to: " + game.getDrawFourCounter());
+                // We no longer need to increment the draw four counter here
+                // as the handleActionCard method already does this
             } else {
                 // For regular Wild cards, just set the color
                 game.setCurrentColor(color);
@@ -191,37 +193,19 @@ public class GameBoardController {
             // First, inform the player about the color choice
             showMessage("Color set to: " + color);
             
-            // Explicitly force a player turn change to prevent playing additional cards
-            if (game.getCurrentPlayerIndex() == 0) {
-                game.moveToNextPlayer();
-            }
-            
             // Update the UI to immediately reflect the turn change
             updateGameUI();
             
-            // If a Wild Draw Four was played, apply the penalty to the next player
-            if (wasWildDrawFourPlayed) {
-                // Make the next player draw 4 cards (unless they can stack another Wild Draw Four)
-                game.handleDrawFourStack();
-                System.out.println("Wild Draw Four penalty applied to next player");
-            }
-            
-            // Update the UI after applying the penalty
-            updateGameUI();
-            
-            // Force a pause to make turn changes more visible
-            try {
-                Thread.sleep(500);  // Short pause for UI update
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
+            // We no longer need to manually apply the penalty here
+            // as the moveToNextPlayer() call in handleActionCard and then handleDrawFourStack
+            // will take care of it
             
             // Debug the game state after color selection
             debugGameState();
             
             // Check if it's now a CPU's turn
             if (!isHumanTurn() && !game.isGameOver()) {
-                playCPUTurn();
+                startCpuTurnSequence();
             }
         }
     }
@@ -258,7 +242,7 @@ public class GameBoardController {
             
             // Automatically play for CPU if they start first
             if (!isHumanTurn()) {
-                playCPUTurn();
+                startCpuTurnSequence();
             }
         } catch (Exception e) {
             showMessage("Error initializing game: " + e.getMessage());
@@ -296,13 +280,24 @@ public class GameBoardController {
                 }
             }
             
+            // Update all visual elements
             updateDiscardPile();
             updatePlayerHand();
             updateCPUHandPanes();
-            // Initialize UI components
             updateTurnIndicators();
             updateUnoIndicators();
             updateColorDisplay();
+            
+            // Update current player label
+            if (currentPlayerLabel != null) {
+                Player currentPlayer = game.getPlayers().get(game.getCurrentPlayerIndex());
+                currentPlayerLabel.setText("Current Player: " + currentPlayer.getName());
+            }
+            
+            // Update direction indicator
+            if (directionLabel != null) {
+                directionLabel.setText("Direction: " + (game.isClockwise() ? "Clockwise" : "Counter-Clockwise"));
+            }
             
             // Debug game state
             debugGameState();
@@ -312,14 +307,16 @@ public class GameBoardController {
                 gameStateLabel.setText("");
             }
             
-            // Check for penalties that must be handled automatically
+            // Check for penalties that must be handled automatically, but only if it's human's turn
             if (isHumanTurn() && !waitingForColorSelection) {
                 checkForPendingPenalties();
             }
             
-            // Check if it's CPU's turn and play automatically
-            if (!isHumanTurn() && !game.isGameOver() && !waitingForColorSelection) {
-                playCPUTurn();
+            // Important: Only trigger CPU turns from here if we're not already in a CPU turn sequence
+            // This prevents double-triggering of CPU turns
+            if (!isHumanTurn() && !game.isGameOver() && !waitingForColorSelection && 
+                !isCpuTurnInProgress) {
+                startCpuTurnSequence();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -791,20 +788,56 @@ public class GameBoardController {
         // Check each player's hand size and update indicators
         for (int i = 0; i < game.getPlayers().size(); i++) {
             Player player = game.getPlayers().get(i);
-            if (player.getHand().size() == 1) {
-                // Player has UNO!
+            
+            // Show UNO indicator if player has exactly 1 card OR has called UNO with 2 cards
+            if (player.getHand().size() == 1 || 
+                (player.getHand().size() == 2 && player.hasCalledUno())) {
+                
+                // Change indicator to bright red for UNO
+                Color unoColor = Color.RED;
+                
                 switch (i) {
                     case 0:
-                        if (playerTurn != null) playerTurn.setFill(Color.RED);
+                        if (playerTurn != null) {
+                            playerTurn.setFill(unoColor);
+                            // Add border around the indicator
+                            playerTurn.setStroke(Color.YELLOW);
+                            playerTurn.setStrokeWidth(2);
+                        }
+                        // If player has called UNO with 2 cards, also show in the console
+                        if (player.getHand().size() == 2 && player.hasCalledUno()) {
+                            System.out.println("Human player UNO status: Called UNO with 2 cards");
+                        }
                         break;
                     case 1:
-                        if (cpu1Turn != null) cpu1Turn.setFill(Color.RED);
+                        if (cpu1Turn != null) {
+                            cpu1Turn.setFill(unoColor);
+                            cpu1Turn.setStroke(Color.YELLOW);
+                            cpu1Turn.setStrokeWidth(2);
+                        }
+                        if (player.hasCalledUno()) {
+                            System.out.println("CPU 1 UNO status: " + (player.getHand().size() == 1 ? "Has 1 card" : "Called UNO with 2 cards"));
+                        }
                         break;
                     case 2:
-                        if (cpu2Turn != null) cpu2Turn.setFill(Color.RED);
+                        if (cpu2Turn != null) {
+                            cpu2Turn.setFill(unoColor);
+                            cpu2Turn.setStroke(Color.YELLOW);
+                            cpu2Turn.setStrokeWidth(2);
+                        }
+                        if (player.hasCalledUno()) {
+                            System.out.println("CPU 2 UNO status: " + (player.getHand().size() == 1 ? "Has 1 card" : "Called UNO with 2 cards"));
+                        }
                         break;
                     case 3:
-                        if (cpu3Turn != null) cpu3Turn.setFill(Color.RED);
+                        if (cpu3Turn != null) {
+                            cpu3Turn.setFill(unoColor);
+                            cpu3Turn.setStroke(Color.YELLOW);
+                            cpu3Turn.setStrokeWidth(2);
+                        }
+                        if (player.hasCalledUno()) {
+                            System.out.println("CPU 3 UNO status: " + (player.getHand().size() == 1 ? "Has 1 card" : "Called UNO with 2 cards"));
+                        }
                         break;
                 }
             }
@@ -860,11 +893,11 @@ public class GameBoardController {
                 boolean played = game.playCard(cardIndex);
                 if (played) {
                     updateGameUI();
-                    // Move to next player after playing Draw Two
-                    game.moveToNextPlayer();
+                    // After playing Draw Two, update game state and let the next player handle the Draw Two stack
+                    // We don't need to manually move to the next player as game.playCard will handle this through handleActionCard
                     updateGameUI();
                     if (!isHumanTurn()) {
-                        playCPUTurn();
+                        startCpuTurnSequence();
                     }
                 } else {
                     showMessage("Failed to play Draw Two!");
@@ -939,13 +972,13 @@ public class GameBoardController {
                             showMessage("Don't forget to call UNO!");
                         }
                         
-                        // Move to next player and update UI
-                        game.moveToNextPlayer();
+                        // Don't need to manually move to the next player anymore
+                        // as game.playCard will handle this through handleActionCard
                         updateGameUI();
                         
                         // If it's a CPU's turn now, play it
                         if (!isHumanTurn()) {
-                            playCPUTurn();
+                            startCpuTurnSequence();
                         }
                     }
                 }
@@ -966,7 +999,7 @@ public class GameBoardController {
             // Check if there's a Draw Four counter active
             if (game.getDrawFourCounter() > 0) {
                 int cardsToDraw = game.getDrawFourCounter();
-                showMessage("You must draw " + cardsToDraw + " cards!");
+                showMessage("Drawing " + cardsToDraw + " cards due to Wild Draw Four!");
                 
                 // Draw the required cards
                 for (int i = 0; i < cardsToDraw; i++) {
@@ -986,7 +1019,7 @@ public class GameBoardController {
             // Check if there's a Draw Two counter active
             if (game.getDrawTwoCounter() > 0) {
                 int cardsToDraw = game.getDrawTwoCounter();
-                showMessage("You must draw " + cardsToDraw + " cards!");
+                showMessage("Drawing " + cardsToDraw + " cards due to Draw Two!");
                 
                 // Draw the required cards
                 for (int i = 0; i < cardsToDraw; i++) {
@@ -1068,15 +1101,46 @@ public class GameBoardController {
                 if (hasPlayableCard) {
                     // Mark that player has called UNO
                     player.setHasCalledUno(true);
-                    // Show message with player name
+                    
+                    // Show message with player name and make it more visible
                     String playerName = player.getName();
-                    showMessage(playerName + " has called UNO!");
-                    // Also update the game state label to make it more visible
-                    if (gameStateLabel != null) {
-                        gameStateLabel.setText(playerName + " has called UNO!");
-                    }
-                    // Update UI
-                    updateGameUI();
+                    String unoMessage = playerName + " has called UNO!";
+                    
+                    // Show the message in a more prominent way
+                    showMessage(unoMessage);
+                    
+                    // Display a more visible alert for UNO call
+                    Platform.runLater(() -> {
+                        // Create a larger, colorful label for the UNO announcement
+                        Label unoLabel = new Label(unoMessage);
+                        unoLabel.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: red;");
+                        
+                        // Add it to the game board in a prominent position
+                        // If gameStateLabel exists, we can modify it temporarily
+                        if (gameStateLabel != null) {
+                            String originalText = gameStateLabel.getText();
+                            String originalStyle = gameStateLabel.getStyle();
+                            
+                            // Change the style and text
+                            gameStateLabel.setText(unoMessage);
+                            gameStateLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: red;");
+                            
+                            // Create a pause to revert after 3 seconds
+                            PauseTransition pause = new PauseTransition(Duration.seconds(3));
+                            pause.setOnFinished(event -> {
+                                gameStateLabel.setText(originalText);
+                                gameStateLabel.setStyle(originalStyle);
+                            });
+                            pause.play();
+                        }
+                        
+                        // Also print to console for debugging
+                        System.out.println("UNO CALLED: " + unoMessage);
+                    });
+                    
+                    // Update UI to reflect UNO status
+                    updateUnoIndicators();
+                    
                 } else {
                     showMessage("You can only call UNO when you have a playable card!");
                 }
@@ -1121,49 +1185,6 @@ public class GameBoardController {
         }
     }
     
-    private void playCPUTurn() {
-        System.out.println("CPU turn started. Current player index: " + game.getCurrentPlayerIndex());
-        
-        // Add a safety check to prevent infinite CPU turns
-        if (game.getCurrentPlayerIndex() == 0 || game.isGameOver()) {
-            System.out.println("Aborting CPU turn - it's either player's turn or game is over");
-            return;
-        }
-        
-        // Log the current player index
-        System.out.println("CPU player index: " + game.getCurrentPlayerIndex());
-        
-        // Increase the pause duration to 2.5 seconds to make CPU turns easier to follow
-        PauseTransition pause = new PauseTransition(Duration.seconds(2.5));
-        pause.setOnFinished(e -> {
-            if (!isHumanTurn() && !game.isGameOver()) {
-                System.out.println("CPU playing turn...");
-                System.out.println("CPU " + game.getPlayers().get(game.getCurrentPlayerIndex()).getName() + " is playing turn");
-                
-                // CPU takes its turn
-                boolean cpuPlayed = game.playCpuTurn();
-                System.out.println("CPU turn finished. Next player: " + game.getCurrentPlayerIndex());
-                System.out.println("CPU played: " + cpuPlayed + ", Current player after CPU: " + game.getCurrentPlayerIndex());
-                
-                // Update all UI elements to reflect changes
-                updateGameUI();
-                
-                // Debug the game state
-                debugGameState();
-                
-                // If it's still a CPU turn (but different CPU), schedule the next CPU turn
-                if (!isHumanTurn() && !game.isGameOver()) {
-                    
-                    // Normal case: Continue with the next CPU player turn
-                    PauseTransition nextCpuTurn = new PauseTransition(Duration.seconds(2.5));
-                    nextCpuTurn.setOnFinished(event -> playCPUTurn());
-                    nextCpuTurn.play();
-                }
-            }
-        });
-        
-        pause.play();
-    }
     private void recordGameResult(Player winner) {
         try {
             // Create a list for player IDs
@@ -1305,6 +1326,9 @@ public class GameBoardController {
         final String activeStyle = "-fx-font-weight: bold; -fx-text-fill: yellow;";
         final Color BRIGHT_GREEN = Color.web("#00FF00");  // Bright green
         
+        // Store the current player index for clarity
+        final int currentPlayerIndex = game.getCurrentPlayerIndex();
+        
         // Run UI updates on the JavaFX Application Thread
         Platform.runLater(() -> {
             // Verify the circles are initialized
@@ -1317,104 +1341,179 @@ public class GameBoardController {
                 playerTurn.setStrokeWidth(0);
             }
             if (cpu1Turn != null) {
+                System.out.println("Setting cpu1Turn to DARKGREY");
                 cpu1Turn.setFill(Color.DARKGREY);
                 cpu1Turn.setStrokeWidth(0);
             }
             if (cpu2Turn != null) {
+                System.out.println("Setting cpu2Turn to DARKGREY");
                 cpu2Turn.setFill(Color.DARKGREY);
                 cpu2Turn.setStrokeWidth(0);
             }
             if (cpu3Turn != null) {
+                System.out.println("Setting cpu3Turn to DARKGREY");
                 cpu3Turn.setFill(Color.DARKGREY);
                 cpu3Turn.setStrokeWidth(0);
             }
             
-            // Set the turn indicator for current player to green
-            int currentPlayerIndex = game.getCurrentPlayerIndex();
+            // Now set the current player's indicator
             System.out.println("Current player index: " + currentPlayerIndex);
             
             switch (currentPlayerIndex) {
-                case 0:
+                case 0: // Human player
                     if (playerTurn != null) {
                         System.out.println("Setting playerTurn to GREEN");
                         playerTurn.setFill(BRIGHT_GREEN);
-                        playerTurn.setStroke(Color.WHITE);
                         playerTurn.setStrokeWidth(2);
                     }
                     break;
-                case 1:
+                case 1: // CPU 1
                     if (cpu1Turn != null) {
                         System.out.println("Setting cpu1Turn to GREEN");
                         cpu1Turn.setFill(BRIGHT_GREEN);
-                        cpu1Turn.setStroke(Color.WHITE);
                         cpu1Turn.setStrokeWidth(2);
                     }
                     break;
-                case 2:
+                case 2: // CPU 2
                     if (cpu2Turn != null) {
                         System.out.println("Setting cpu2Turn to GREEN");
                         cpu2Turn.setFill(BRIGHT_GREEN);
-                        cpu2Turn.setStroke(Color.WHITE);
                         cpu2Turn.setStrokeWidth(2);
                     }
                     break;
-                case 3:
+                case 3: // CPU 3
                     if (cpu3Turn != null) {
                         System.out.println("Setting cpu3Turn to GREEN");
                         cpu3Turn.setFill(BRIGHT_GREEN);
-                        cpu3Turn.setStroke(Color.WHITE);
                         cpu3Turn.setStrokeWidth(2);
                     }
                     break;
             }
             
-            // Debug to check if labels are defined
-            System.out.println("Labels defined: playerLabel=" + (playerLabel != null) + ", cpu1Label=" + (cpu1Label != null) + ", cpu2Label=" + (cpu2Label != null) + ", cpu3Label=" + (cpu3Label != null)); 
+            // Update player labels
+            System.out.println("Labels defined: playerLabel=" + (playerLabel != null) + ", cpu1Label=" + (cpu1Label != null) + ", cpu2Label=" + (cpu2Label != null) + ", cpu3Label=" + (cpu3Label != null));
             
-            // Reset all styles first
-            if (playerLabel != null) playerLabel.setStyle(playerStyle);
-            if (cpu1Label != null) cpu1Label.setStyle(playerStyle);
-            if (cpu2Label != null) cpu2Label.setStyle(playerStyle);
-            if (cpu3Label != null) cpu3Label.setStyle(playerStyle);
+            // Reset all labels to white
+            if (playerLabel != null) {
+                playerLabel.setTextFill(Color.WHITE);
+            }
+            if (cpu1Label != null) {
+                cpu1Label.setTextFill(Color.WHITE);
+            }
+            if (cpu2Label != null) {
+                cpu2Label.setTextFill(Color.WHITE);
+            }
+            if (cpu3Label != null) {
+                cpu3Label.setTextFill(Color.WHITE);
+            }
             
-            // Highlight the active player name with yellow text
-            switch (game.getCurrentPlayerIndex()) {
-                case 0:
+            // Set the current player's label color
+            switch (currentPlayerIndex) {
+                case 0: // Human player
                     if (playerLabel != null) {
                         System.out.println("Setting playerLabel to YELLOW");
-                        playerLabel.setStyle(activeStyle);
+                        playerLabel.setTextFill(Color.YELLOW);
                     }
                     break;
-                case 1:
+                case 1: // CPU 1
                     if (cpu1Label != null) {
                         System.out.println("Setting cpu1Label to YELLOW");
-                        cpu1Label.setStyle(activeStyle);
+                        cpu1Label.setTextFill(Color.YELLOW);
                     }
                     break;
-                case 2:
+                case 2: // CPU 2
                     if (cpu2Label != null) {
                         System.out.println("Setting cpu2Label to YELLOW");
-                        cpu2Label.setStyle(activeStyle);
+                        cpu2Label.setTextFill(Color.YELLOW);
                     }
                     break;
-                case 3:
+                case 3: // CPU 3
                     if (cpu3Label != null) {
                         System.out.println("Setting cpu3Label to YELLOW");
-                        cpu3Label.setStyle(activeStyle);
+                        cpu3Label.setTextFill(Color.YELLOW);
                     }
                     break;
             }
-            
-            // Update current player label
-            if (currentPlayerLabel != null) {
-                Player currentPlayer = game.getPlayers().get(game.getCurrentPlayerIndex());
-                currentPlayerLabel.setText("Current Player: " + currentPlayer.getName());
+        });
+    }
+    
+    // Method to start the CPU turn sequence
+    private void startCpuTurnSequence() {
+        // Set the flag to prevent multiple CPU sequences running at once
+        isCpuTurnInProgress = true;
+        
+        // Start the CPU turn
+        playCPUTurn();
+    }
+    
+    // Modified playCPUTurn method to work with the flag
+    private void playCPUTurn() {
+        System.out.println("CPU turn started. Current player index: " + game.getCurrentPlayerIndex());
+        
+        // Add a safety check to prevent infinite CPU turns
+        if (game.getCurrentPlayerIndex() == 0 || game.isGameOver()) {
+            System.out.println("Aborting CPU turn - it's either player's turn or game is over");
+            isCpuTurnInProgress = false; // Reset flag when we're done
+            return;
+        }
+        
+        // Log the current player index
+        System.out.println("CPU player index: " + game.getCurrentPlayerIndex());
+        
+        // Store which CPU player we're processing now to avoid confusion if the index changes
+        final int currentCpuIndex = game.getCurrentPlayerIndex();
+        final String cpuName = game.getPlayers().get(currentCpuIndex).getName();
+        
+        // Increase the pause duration to 2.5 seconds to make CPU turns easier to follow
+        PauseTransition pause = new PauseTransition(Duration.seconds(2.5));
+        pause.setOnFinished(e -> {
+            // Safety check again - make sure nothing has changed
+            if (game.getCurrentPlayerIndex() != currentCpuIndex) {
+                System.out.println("Current player changed during delay! Was " + currentCpuIndex + 
+                                  " now " + game.getCurrentPlayerIndex() + ". Skipping this CPU turn.");
+                isCpuTurnInProgress = false; // Reset flag
+                return;
             }
             
-            // Update direction indicator
-            if (directionLabel != null) {
-                directionLabel.setText("Direction: " + (game.isClockwise() ? "Clockwise" : "Counter-Clockwise"));
+            if (game.isGameOver()) {
+                System.out.println("Game over detected during CPU pause. Aborting CPU turn.");
+                isCpuTurnInProgress = false; // Reset flag
+                return;
+            }
+            
+            System.out.println("CPU playing turn...");
+            System.out.println("CPU " + cpuName + " is playing turn");
+            
+            // CPU takes its turn
+            boolean cpuPlayed = game.playCpuTurn();
+            System.out.println("CPU turn finished. Next player: " + game.getCurrentPlayerIndex());
+            System.out.println("CPU " + cpuName + " played: " + cpuPlayed + ", Current player after CPU: " + game.getCurrentPlayerIndex());
+            
+            // Update all UI elements to reflect changes
+            updateGameUI();
+            
+            // Debug the game state
+            debugGameState();
+            
+            // If it's still a CPU turn (but different CPU), schedule the next CPU turn
+            if (!isHumanTurn() && !game.isGameOver()) {
+                // Make sure we're not stuck on the same CPU
+                if (game.getCurrentPlayerIndex() == currentCpuIndex) {
+                    System.out.println("WARNING: CPU turn didn't advance to the next player! Forcing advance...");
+                    game.moveToNextPlayer();
+                    updateGameUI();
+                }
+                
+                // Schedule the next CPU's turn
+                PauseTransition nextCpuTurn = new PauseTransition(Duration.seconds(2.5));
+                nextCpuTurn.setOnFinished(event -> playCPUTurn());
+                nextCpuTurn.play();
+            } else {
+                // We're done with CPU turns, reset the flag
+                isCpuTurnInProgress = false;
             }
         });
+        
+        pause.play();
     }
 }

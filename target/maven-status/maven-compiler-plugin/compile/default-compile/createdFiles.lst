@@ -12,6 +12,7 @@ com/ceng453/frontend/controller/LeaderboardController$LeaderboardEntry.class
 com/ceng453/frontend/controller/LoginController.class
 com/ceng453/frontend/controller/RegisterController.class
 com/ceng453/frontend/controller/LeaderboardController.class
+com/ceng453/frontend/controller/GameBoardController.class
 com/ceng453/frontend/model/Card$Color.class
 com/ceng453/frontend/controller/PasswordResetController.class
 com/ceng453/frontend/UnoApplication.class

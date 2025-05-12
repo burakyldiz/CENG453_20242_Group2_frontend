@@ -127,9 +127,9 @@ public class Game {
         currentColor = initialCard.getColor();
         
         // Apply effect of initial card if it's an action card
-        if (initialCard.getType() != Card.Type.NUMBER) {
-            handleActionCard(initialCard);
-        }
+        //if (initialCard.getType() != Card.Type.NUMBER) {
+          //  handleActionCard(initialCard);
+        //}
     }
     
     // Initialize a multiplayer game
@@ -318,7 +318,12 @@ public class Game {
             case DRAW_TWO:
                 drawTwoCounter += 2;
                 System.out.println("Draw Two counter set to: " + drawTwoCounter);
+                
+                // Move to the next player first, then the next player will handle the stack
                 moveToNextPlayer();
+                
+                // Now the next player will handle the Draw Two stack
+                handleDrawTwoStack();
                 break;
                 
             case WILD:
@@ -326,19 +331,20 @@ public class Game {
                 break;
                 
             case WILD_DRAW_FOUR:
-                // Update the drawFourCounter instead of directly making the next player draw
+                // Update the drawFourCounter
                 drawFourCounter += 4;
                 System.out.println("Draw Four counter set to: " + drawFourCounter);
+                
+                // Move to the next player first, then the next player will handle the stack
                 moveToNextPlayer();
+                
+                // Now the next player will handle the Draw Four stack
+                handleDrawFourStack();
                 break;
                 
             case NUMBER:
                 // For number cards, simply move to the next player
                 moveToNextPlayer();
-                break;
-                
-            default:
-                moveToNextPlayer(); // Default behavior: move to next player
                 break;
         }
     }
@@ -370,6 +376,7 @@ public class Game {
             if (hasDrawTwo && !currentPlayer.isHuman()) {
                 // CPU player has a Draw Two card and can stack - always stack for CPU
                 playCard(drawTwoIndex);
+                // Don't move to next player here as it's handled in playCard/handleActionCard
             } else if (hasDrawTwo && currentPlayer.isHuman()) {
                 // Human player has Draw Two card - decision to stack is made through the UI
                 // We do nothing here, they will either play the card or draw manually
@@ -387,7 +394,9 @@ public class Game {
                 }
                 drawTwoCounter = 0; // Reset counter
                 System.out.println("Draw Two counter reset to 0");
-                moveToNextPlayer(); // Skip turn
+                
+                // We don't need to move to next player anymore since we're already at the correct player
+                // This avoids the double move issue
             }
         }
     }
@@ -414,6 +423,7 @@ public class Game {
                 // CPU player has a Wild Draw Four card and can stack - always stack for CPU
                 System.out.println("CPU " + currentPlayer.getName() + " stacking Wild Draw Four!");
                 playCard(drawFourIndex);
+                // Don't move to next player here as it's handled in playCard/handleActionCard
             } else if (hasDrawFour && currentPlayer.isHuman()) {
                 // Human player has Wild Draw Four card - decision to stack is made through the UI
                 // We do nothing here, they will either play the card or draw manually
@@ -438,7 +448,8 @@ public class Game {
                 // Don't change the current color - it should remain what was set by the Wild Draw Four
                 System.out.println("After drawing penalty cards, current color remains: " + currentColor);
                 
-                moveToNextPlayer(); // Skip turn
+                // We don't need to move to next player anymore since we're already at the correct player
+                // This avoids the double move issue
             }
         }
     }
@@ -563,9 +574,9 @@ public class Game {
         }
         
         // If there's a draw four penalty, current player must draw cards
-        if (drawFourCounter > 0) {
-            handleDrawFourStack();
-        }
+        //if (drawFourCounter > 0) {
+        //    handleDrawFourStack();
+        //}
         
         System.out.println("Moving to next player: " + currentPlayerIndex + " (" + players.get(currentPlayerIndex).getName() + ")");
     }
@@ -615,36 +626,76 @@ public class Game {
         try {
             // Check for any Draw Two stacking
             if (drawTwoCounter > 0) {
-                // Draw cards and move to next player
-                System.out.println("CPU must draw " + drawTwoCounter + " cards due to Draw Two stack");
-                for (int i = 0; i < drawTwoCounter; i++) {
-                    Card drawnCard = deck.drawCard();
-                    if (drawnCard == null) {
-                        reshuffleDeck();
-                        drawnCard = deck.drawCard();
+                // Check if the CPU has a Draw Two to stack
+                boolean hasDrawTwo = false;
+                int drawTwoIndex = -1;
+                
+                for (int i = 0; i < currentPlayer.getHand().size(); i++) {
+                    Card card = currentPlayer.getHand().get(i);
+                    if (card.getType() == Card.Type.DRAW_TWO) {
+                        hasDrawTwo = true;
+                        drawTwoIndex = i;
+                        break;
                     }
-                    currentPlayer.addCard(drawnCard);
                 }
-                drawTwoCounter = 0; // Reset the counter
-                moveToNextPlayer();
-                return true;
+                
+                if (hasDrawTwo) {
+                    // CPU has a Draw Two and will play it
+                    System.out.println("CPU " + currentPlayer.getName() + " stacks Draw Two");
+                    return playCard(drawTwoIndex);
+                } else {
+                    // Draw cards but don't move to next player - we're already the player who should draw
+                    System.out.println("CPU must draw " + drawTwoCounter + " cards due to Draw Two stack");
+                    for (int i = 0; i < drawTwoCounter; i++) {
+                        Card drawnCard = deck.drawCard();
+                        if (drawnCard == null) {
+                            reshuffleDeck();
+                            drawnCard = deck.drawCard();
+                        }
+                        currentPlayer.addCard(drawnCard);
+                    }
+                    drawTwoCounter = 0; // Reset the counter
+                    // After drawing the cards, the CPU's turn is over
+                    moveToNextPlayer();
+                    return true;
+                }
             }
             
             // Check for any Wild Draw Four stacking
             if (drawFourCounter > 0) {
-                // Draw cards and move to next player
-                System.out.println("CPU must draw " + drawFourCounter + " cards due to Draw Four stack");
-                for (int i = 0; i < drawFourCounter; i++) {
-                    Card drawnCard = deck.drawCard();
-                    if (drawnCard == null) {
-                        reshuffleDeck();
-                        drawnCard = deck.drawCard();
+                // Check if the CPU has a Wild Draw Four to stack
+                boolean hasDrawFour = false;
+                int drawFourIndex = -1;
+                
+                for (int i = 0; i < currentPlayer.getHand().size(); i++) {
+                    Card card = currentPlayer.getHand().get(i);
+                    if (card.getType() == Card.Type.WILD_DRAW_FOUR) {
+                        hasDrawFour = true;
+                        drawFourIndex = i;
+                        break;
                     }
-                    currentPlayer.addCard(drawnCard);
                 }
-                drawFourCounter = 0; // Reset the counter
-                moveToNextPlayer();
-                return true;
+                
+                if (hasDrawFour) {
+                    // CPU has a Wild Draw Four and will play it
+                    System.out.println("CPU " + currentPlayer.getName() + " stacks Wild Draw Four");
+                    return playCard(drawFourIndex);
+                } else {
+                    // Draw cards but don't move to next player - we're already the player who should draw
+                    System.out.println("CPU must draw " + drawFourCounter + " cards due to Draw Four stack");
+                    for (int i = 0; i < drawFourCounter; i++) {
+                        Card drawnCard = deck.drawCard();
+                        if (drawnCard == null) {
+                            reshuffleDeck();
+                            drawnCard = deck.drawCard();
+                        }
+                        currentPlayer.addCard(drawnCard);
+                    }
+                    drawFourCounter = 0; // Reset the counter
+                    // After drawing the cards, the CPU's turn is over
+                    moveToNextPlayer();
+                    return true;
+                }
             }
             
             Card topCard = getTopCard();
@@ -727,6 +778,16 @@ public class Game {
                     currentColor = chosenColor;
                     System.out.println("CPU chose color: " + chosenColor);
                 }
+                
+                // Check if we need to move to the next player
+                // We only move to the next player for NUMBER cards - all other cards have special handling
+                if (playedSuccessfully && cardToPlay.getType() != Card.Type.NUMBER && 
+                    cardToPlay.getType() != Card.Type.DRAW_TWO && cardToPlay.getType() != Card.Type.WILD_DRAW_FOUR) {
+                    // These card types already handle moving to the next player in the playCard method
+                    System.out.println("Special card played, next player handling already done.");
+                }
+                
+                return playedSuccessfully;
             } else {
                 // No valid card, draw one
                 System.out.println("CPU has no valid cards, drawing...");
