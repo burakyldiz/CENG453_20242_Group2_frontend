@@ -161,12 +161,16 @@ public class GameBoardController {
                 game.setCurrentColor(color);
                 System.out.println("Wild Draw Four color set to: " + color);
                 
-                // We no longer need to increment the draw four counter here
-                // as the handleActionCard method already does this
+                // For Wild Draw Four, the moveToNextPlayer is already handled in handleActionCard
+                // so we don't need to do it again here
             } else {
                 // For regular Wild cards, just set the color
                 game.setCurrentColor(color);
                 System.out.println("Wild color set to: " + color);
+                
+                // For regular Wild cards, we need to manually move to the next player
+                // since handleActionCard doesn't do it for WILD type
+                game.moveToNextPlayer();
             }
             
             // Update UI to show the selected color
@@ -182,23 +186,15 @@ public class GameBoardController {
             }
             waitingForColorSelection = false;
             
-            // Store the current state before resetting
-            boolean wasWildDrawFourPlayed = wildDrawFourPlayed;
-            
             // Reset wild card state
             wildDrawFourPlayed = false;
             lastPlayedCard = null;
             
-            // After playing a Wild card and selecting a color, move to the next player's turn
-            // First, inform the player about the color choice
+            // After playing a Wild card and selecting a color, inform the player about the color choice
             showMessage("Color set to: " + color);
             
             // Update the UI to immediately reflect the turn change
             updateGameUI();
-            
-            // We no longer need to manually apply the penalty here
-            // as the moveToNextPlayer() call in handleActionCard and then handleDrawFourStack
-            // will take care of it
             
             // Debug the game state after color selection
             debugGameState();
@@ -463,7 +459,13 @@ public class GameBoardController {
                             isPlayable = (card.getType() == Card.Type.DRAW_TWO);
                         } else {
                             // Regular playability check
-                            isPlayable = card.canBePlayedOn(topCard);
+                            if (topCard.getType() == Card.Type.WILD || topCard.getType() == Card.Type.WILD_DRAW_FOUR) {
+                                // For wild cards, check against the current color
+                                isPlayable = (card.getColor() == game.getCurrentColor() || card.getColor() == Card.Color.WILD);
+                            } else {
+                                // Regular card matching
+                                isPlayable = card.canBePlayedOn(topCard);
+                            }
                             
                             // Special check for Wild Draw Four - only playable if there are no matching cards
                             if (isPlayable && card.getType() == Card.Type.WILD_DRAW_FOUR) {
@@ -474,8 +476,14 @@ public class GameBoardController {
                                     if (handCard == card) continue;
                                     
                                     // Check if any card matches color or is a regular wild
-                                    if (handCard.getColor() == game.getCurrentColor() || 
-                                        (handCard.getColor() == Card.Color.WILD && handCard.getType() != Card.Type.WILD_DRAW_FOUR)) {
+                                    if ((topCard.getType() == Card.Type.WILD || topCard.getType() == Card.Type.WILD_DRAW_FOUR) && 
+                                        (handCard.getColor() == game.getCurrentColor() || 
+                                        (handCard.getColor() == Card.Color.WILD && handCard.getType() != Card.Type.WILD_DRAW_FOUR))) {
+                                        hasMatchingCards = true;
+                                        break;
+                                    } else if (handCard.getColor() == topCard.getColor() || 
+                                              handCard.getType() == topCard.getType() || 
+                                              handCard.getColor() == Card.Color.WILD) {
                                         hasMatchingCards = true;
                                         break;
                                     }
@@ -909,7 +917,18 @@ public class GameBoardController {
         }
         
         // Check if the card can be played
-        if (card.canBePlayedOn(topCard)) {
+        boolean canPlay = false;
+        
+        // If the top card is a wild card, check against the current color
+        if (topCard.getType() == Card.Type.WILD || topCard.getType() == Card.Type.WILD_DRAW_FOUR) {
+            canPlay = (card.getColor() == game.getCurrentColor() || card.getColor() == Card.Color.WILD);
+            System.out.println("Checking if card " + card + " can be played on wild card with color " + game.getCurrentColor() + ": " + canPlay);
+        } else {
+            // Regular card matching
+            canPlay = card.canBePlayedOn(topCard);
+        }
+        
+        if (canPlay) {
             // Special check for Wild Draw Four: verify player has no other matching cards
             if (card.getType() == Card.Type.WILD_DRAW_FOUR) {
                 // Check if player has any valid cards to play other than Wild Draw Four

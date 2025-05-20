@@ -226,16 +226,8 @@ public class Game {
         }
         
         // Special rule for Wild Draw Four - can only be played if no other valid card
-        // Handle Wild Draw Four according to our custom rules:
-        // 1. Can be played when there are no other playable cards
-        // 2. Can be played on another Wild Draw Four (when drawFourCounter > 0)
         if (card.getType() == Card.Type.WILD_DRAW_FOUR) {
-            if (drawFourCounter > 0) {
-                // Rule 2: Allow stacking Wild Draw Four on another Wild Draw Four
-                System.out.println("Playing Wild Draw Four on another Wild Draw Four");
-                // Continue with play - this is allowed
-            } else if (hasValidCardOtherThanWildDrawFour(currentPlayer, topCard)) {
-                // Rule 1: Cannot play Wild Draw Four when other valid cards exist
+            if (hasValidCardOtherThanWildDrawFour(currentPlayer, topCard)) {
                 System.out.println("Cannot play Wild Draw Four when you have other valid cards to play.");
                 return false;
             }
@@ -248,13 +240,6 @@ public class Game {
         // Update current color for non-wild cards
         if (card.getColor() != Card.Color.WILD) {
             currentColor = card.getColor();
-            System.out.println("Current color updated to: " + currentColor);
-        }
-        
-        // Check if player has won
-        if (currentPlayer.hasWon()) {
-            isGameOver = true;
-            return true;
         }
         
         // Handle action cards
@@ -267,16 +252,19 @@ public class Game {
     public boolean hasValidCardOtherThanWildDrawFour(Player player, Card topCard) {
         for (Card card : player.getHand()) {
             if (card.getType() != Card.Type.WILD_DRAW_FOUR) {
+                // For wild cards on top, check against current color
                 if (topCard.getType() == Card.Type.WILD || topCard.getType() == Card.Type.WILD_DRAW_FOUR) {
-                    // For wild cards, check against current color
                     if (card.getColor() == currentColor || card.getColor() == Card.Color.WILD) {
+                        System.out.println("Found valid card " + card + " matching color " + currentColor);
                         return true;
                     }
                 } else if (card.canBePlayedOn(topCard)) {
+                    System.out.println("Found valid card " + card + " matching " + topCard);
                     return true;
                 }
             }
         }
+        System.out.println("No valid cards other than Wild Draw Four found");
         return false;
     }
     
@@ -328,6 +316,9 @@ public class Game {
                 
             case WILD:
                 // Color will be chosen separately
+                // We don't move to the next player here for regular Wild cards
+                // This is handled in the controller after color selection
+                System.out.println("Wild card played - waiting for color selection");
                 break;
                 
             case WILD_DRAW_FOUR:
@@ -395,8 +386,9 @@ public class Game {
                 drawTwoCounter = 0; // Reset counter
                 System.out.println("Draw Two counter reset to 0");
                 
-                // We don't need to move to next player anymore since we're already at the correct player
-                // This avoids the double move issue
+                // Move to the next player after drawing cards
+                moveToNextPlayer();
+                System.out.println("Turn moved to next player: " + players.get(currentPlayerIndex).getName());
             }
         }
     }
@@ -448,42 +440,10 @@ public class Game {
                 // Don't change the current color - it should remain what was set by the Wild Draw Four
                 System.out.println("After drawing penalty cards, current color remains: " + currentColor);
                 
-                // We don't need to move to next player anymore since we're already at the correct player
-                // This avoids the double move issue
+                // Move to the next player after drawing cards
+                moveToNextPlayer();
+                System.out.println("Turn moved to next player: " + players.get(currentPlayerIndex).getName());
             }
-        }
-    }
-    
-    // Method to handle Wild Draw Four challenge in multiplayer
-    public void challengeWildDrawFour(boolean isChallenge) {
-        if (isChallengeActive) {
-            Player previousPlayer = getPreviousPlayer();
-            Player currentPlayer = players.get(currentPlayerIndex);
-            
-            if (isChallenge) {
-                // Check if challenge is valid (did previous player have a matching color)
-                boolean hasMatch = previousPlayer.hasColorMatch(getSecondTopCard().getColor());
-                
-                if (hasMatch) {
-                    // Challenge successful - previous player draws 4 cards
-                    for (int i = 0; i < 4; i++) {
-                        previousPlayer.addCard(deck.drawCard());
-                    }
-                } else {
-                    // Challenge failed - current player draws 6 cards
-                    for (int i = 0; i < 6; i++) {
-                        currentPlayer.addCard(deck.drawCard());
-                    }
-                    moveToNextPlayer(); // Skip turn
-                }
-            } else {
-                // No challenge - current player draws 4 cards
-                // We now use the drawFourCounter instead of direct drawing
-                drawFourCounter += 4;
-                handleDrawFourStack();
-            }
-            
-            isChallengeActive = false;
         }
     }
     
@@ -572,11 +532,6 @@ public class Game {
         } else {
             currentPlayerIndex = (currentPlayerIndex + players.size() - 1) % players.size();
         }
-        
-        // If there's a draw four penalty, current player must draw cards
-        //if (drawFourCounter > 0) {
-        //    handleDrawFourStack();
-        //}
         
         System.out.println("Moving to next player: " + currentPlayerIndex + " (" + players.get(currentPlayerIndex).getName() + ")");
     }
