@@ -38,6 +38,11 @@ public class Deck {
             cards.add(new Card(Card.Color.WILD, Card.Type.WILD));
             cards.add(new Card(Card.Color.WILD, Card.Type.WILD_DRAW_FOUR));
         }
+        
+        // Add bonus cards (1 of each type)
+        cards.add(new Card(Card.Color.WILD, Card.Type.SKIP_ALL));
+        cards.add(new Card(Card.Color.WILD, Card.Type.COLOR_DRAW));
+        cards.add(new Card(Card.Color.WILD, Card.Type.SWAP_HANDS));
     }
     
     public void shuffle() {

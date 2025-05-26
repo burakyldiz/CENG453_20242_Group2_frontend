@@ -13,7 +13,7 @@ public class Card {
     
     // Enum for card types
     public enum Type {
-        NUMBER, SKIP, REVERSE, DRAW_TWO, WILD, WILD_DRAW_FOUR;
+        NUMBER, SKIP, REVERSE, DRAW_TWO, WILD, WILD_DRAW_FOUR, SKIP_ALL, COLOR_DRAW, SWAP_HANDS;
         
         @Override
         public String toString() {
@@ -68,6 +68,17 @@ public class Card {
             return true;
         }
         
+        // Bonus cards are always playable from a Card perspective
+        if (this.type == Type.SKIP_ALL || this.type == Type.COLOR_DRAW || this.type == Type.SWAP_HANDS) {
+            return true;
+        }
+        
+        // Any card can be played on top of a Skip All, Color Draw, or Swap Hands card
+        if (topCard.getType() == Type.SKIP_ALL || topCard.getType() == Type.COLOR_DRAW || 
+            topCard.getType() == Type.SWAP_HANDS) {
+            return true;
+        }
+        
         // Match by color
         if (this.color == topCard.getColor()) {
             return true;
@@ -89,8 +100,12 @@ public class Card {
     public String getImageFileName() {
         if (type == Type.NUMBER) {
             return color.toString() + "_" + number + ".png";
-        } else if (type == Type.WILD || type == Type.WILD_DRAW_FOUR) {
-            return type.toString() + ".png";
+        } else if (type == Type.WILD) {
+            return "wild.png";
+        } else if (type == Type.WILD_DRAW_FOUR) {
+            return "wild-draw-four.png";
+        } else if (type == Type.SKIP_ALL || type == Type.COLOR_DRAW || type == Type.SWAP_HANDS) {
+            return "wild-" + type.toString() + ".png";
         } else {
             return color.toString() + "_" + type.toString() + ".png";
         }

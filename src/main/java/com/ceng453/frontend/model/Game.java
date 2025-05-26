@@ -214,9 +214,22 @@ public class Game {
             } else {
                 System.out.println("Card color " + card.getColor() + " doesn't match current color " + currentColor);
             }
-        } else {
+        } 
+        // Any card can be played on top of Skip All, Color Draw, or Swap Hands
+        else if (topCard.getType() == Card.Type.SKIP_ALL || topCard.getType() == Card.Type.COLOR_DRAW || 
+                topCard.getType() == Card.Type.SWAP_HANDS) {
+            canPlay = true;
+            System.out.println("Card can be played because " + topCard.getType() + " allows any card to be played on top of it");
+        }
+        else {
             // Regular card playability check
             canPlay = card.canBePlayedOn(topCard);
+        }
+        
+        // Bonus cards are always playable
+        if (card.getType() == Card.Type.SKIP_ALL || card.getType() == Card.Type.COLOR_DRAW || card.getType() == Card.Type.SWAP_HANDS) {
+            canPlay = true;
+            System.out.println("Bonus card " + card.getType() + " is always playable");
         }
         
         // If the card can't be played, return false
@@ -289,6 +302,48 @@ public class Game {
                 moveToNextPlayer(); // Move to the next player
                 moveToNextPlayer(); // Skip to the player after that
                 System.out.println("After skip, turn goes to " + players.get(currentPlayerIndex).getName());
+                break;
+                
+            case SKIP_ALL:
+                // Skip all players and return to the current player
+                System.out.println("Skip All card played - skipping all other players");
+                
+                // For Skip All, we don't actually need to move the player index
+                // Since we want to skip all other players and return to the current player
+                // So we do nothing - the turn stays with the current player
+                
+                System.out.println("After Skip All, turn remains with " + players.get(currentPlayerIndex).getName() + " (index: " + currentPlayerIndex + ")");
+                System.out.println("Skip All card effect: Do nothing, keep turn with current player");
+                break;
+                
+            case COLOR_DRAW:
+                // Color will be chosen separately
+                // We don't move to the next player here
+                System.out.println("Color Draw card played - waiting for color selection");
+                break;
+                
+            case SWAP_HANDS:
+                // Swap hands with the next player
+                System.out.println("Swap Hands card played - swapping hands with next player");
+                
+                Player currentPlayer = players.get(currentPlayerIndex);
+                int nextPlayerIndex = getNextPlayerIndex();
+                Player nextPlayer = players.get(nextPlayerIndex);
+                
+                // Swap hands
+                List<Card> currentPlayerHand = new ArrayList<>(currentPlayer.getHand());
+                List<Card> nextPlayerHand = new ArrayList<>(nextPlayer.getHand());
+                
+                currentPlayer.getHand().clear();
+                nextPlayer.getHand().clear();
+                
+                currentPlayer.getHand().addAll(nextPlayerHand);
+                nextPlayer.getHand().addAll(currentPlayerHand);
+                
+                System.out.println(currentPlayer.getName() + " swapped hands with " + nextPlayer.getName());
+                
+                // Move to the next player after swapping
+                moveToNextPlayer();
                 break;
                 
             case REVERSE:
@@ -667,6 +722,10 @@ public class Game {
                 if (topCard.getType() == Card.Type.WILD || topCard.getType() == Card.Type.WILD_DRAW_FOUR) {
                     // For wild cards on top, check if we have a card matching the chosen color
                     matches = (card.getColor() == currentColor);
+                } else if (topCard.getType() == Card.Type.SKIP_ALL || topCard.getType() == Card.Type.COLOR_DRAW || 
+                          topCard.getType() == Card.Type.SWAP_HANDS) {
+                    // Any card matches Skip All, Color Draw, or Swap Hands
+                    matches = true;
                 } else {
                     // For regular cards, check normal matching rules (color or value)
                     matches = (card.getColor() == topCard.getColor() || card.getType() == topCard.getType());
@@ -689,6 +748,10 @@ public class Game {
                 if (topCard.getType() == Card.Type.WILD || topCard.getType() == Card.Type.WILD_DRAW_FOUR && drawFourCounter == 0) {
                     // Match against current color for wild cards
                     isPlayable = (card.getColor() == currentColor || card.getColor() == Card.Color.WILD);
+                } else if (topCard.getType() == Card.Type.SKIP_ALL || topCard.getType() == Card.Type.COLOR_DRAW || 
+                          topCard.getType() == Card.Type.SWAP_HANDS) {
+                    // Any card can be played on top of Skip All, Color Draw, or Swap Hands
+                    isPlayable = true;
                 } else {
                     // Regular card matching
                     isPlayable = card.canBePlayedOn(topCard);
@@ -762,6 +825,10 @@ public class Game {
                 if (topCard.getType() == Card.Type.WILD || topCard.getType() == Card.Type.WILD_DRAW_FOUR) {
                     // Match against current color for wild cards
                     canPlayDrawnCard = (drawnCard.getColor() == currentColor || drawnCard.getColor() == Card.Color.WILD);
+                } else if (topCard.getType() == Card.Type.SKIP_ALL || topCard.getType() == Card.Type.COLOR_DRAW || 
+                          topCard.getType() == Card.Type.SWAP_HANDS) {
+                    // Any card can be played on top of Skip All, Color Draw, or Swap Hands
+                    canPlayDrawnCard = true;
                 } else {
                     // Regular card matching
                     canPlayDrawnCard = drawnCard.canBePlayedOn(topCard);
@@ -906,5 +973,45 @@ public class Game {
     // Make deck accessible for direct draw operations
     public Deck getDeck() {
         return deck;
+    }
+    
+    // Method to handle Color Draw card effect
+    public void handleColorDraw(Card.Color selectedColor) {
+        // Set the current color
+        currentColor = selectedColor;
+        System.out.println("Color Draw: selected color is " + selectedColor);
+        
+        // Move to the next player
+        moveToNextPlayer();
+        
+        // The next player must draw cards until they get a card of the selected color
+        Player currentPlayer = players.get(currentPlayerIndex);
+        System.out.println(currentPlayer.getName() + " must draw cards until they get a " + selectedColor + " card");
+        
+        boolean foundMatchingCard = false;
+        int cardsDrawn = 0;
+        
+        // Keep drawing cards until we find one matching the selected color
+        while (!foundMatchingCard) {
+            Card drawnCard = deck.drawCard();
+            if (drawnCard == null) {
+                reshuffleDeck();
+                drawnCard = deck.drawCard();
+            }
+            
+            currentPlayer.addCard(drawnCard);
+            cardsDrawn++;
+            
+            System.out.println(currentPlayer.getName() + " drew: " + drawnCard);
+            
+            // Check if the drawn card matches the selected color
+            if (drawnCard.getColor() == selectedColor) {
+                foundMatchingCard = true;
+                System.out.println(currentPlayer.getName() + " drew a " + selectedColor + " card after drawing " + cardsDrawn + " cards");
+            }
+        }
+        
+        // Move to the next player after drawing
+        moveToNextPlayer();
     }
 }

@@ -91,6 +91,9 @@ public class GameBoardController {
     @FXML private Button cheatDrawTwoButton;
     @FXML private Button cheatWildButton;
     @FXML private Button cheatWildDrawFourButton;
+    @FXML private Button cheatSkipAllButton;
+    @FXML private Button cheatColorDrawButton;
+    @FXML private Button cheatSwapHandsButton;
     
     // Flag to track if CPU turn sequence is already in progress
     private boolean isCpuTurnInProgress = false;
@@ -163,6 +166,10 @@ public class GameBoardController {
                 
                 // For Wild Draw Four, the moveToNextPlayer is already handled in handleActionCard
                 // so we don't need to do it again here
+            } else if (lastPlayedCard.getType() == Card.Type.COLOR_DRAW) {
+                // Handle Color Draw card
+                game.handleColorDraw(color);
+                System.out.println("Color Draw color set to: " + color);
             } else {
                 // For regular Wild cards, just set the color
                 game.setCurrentColor(color);
@@ -199,8 +206,8 @@ public class GameBoardController {
             // Debug the game state after color selection
             debugGameState();
             
-            // Check if it's now a CPU's turn
-            if (!isHumanTurn() && !game.isGameOver()) {
+            // If it's a CPU's turn now, play it
+            if (!isHumanTurn()) {
                 startCpuTurnSequence();
             }
         }
@@ -446,7 +453,7 @@ public class GameBoardController {
                     cardView.setFitHeight(120);
                     
                     // Check if card is playable
-                    boolean isPlayable = true;
+                    boolean isPlayable = false;
                     
                     // Only apply playability checks and visual fading when it's the player's turn
                     if (isHumanTurn()) {
@@ -458,56 +465,65 @@ public class GameBoardController {
                             // Can only play Draw Two on a Draw Two stack
                             isPlayable = (card.getType() == Card.Type.DRAW_TWO);
                         } else {
+                            // Bonus cards are always playable
+                            if (card.getType() == Card.Type.SKIP_ALL || card.getType() == Card.Type.COLOR_DRAW || card.getType() == Card.Type.SWAP_HANDS) {
+                                isPlayable = true;
+                            }
+                            // Any card can be played on top of Skip All, Color Draw, or Swap Hands
+                            else if (topCard.getType() == Card.Type.SKIP_ALL || topCard.getType() == Card.Type.COLOR_DRAW || 
+                                    topCard.getType() == Card.Type.SWAP_HANDS) {
+                                isPlayable = true;
+                            }
                             // Regular playability check
-                            if (topCard.getType() == Card.Type.WILD || topCard.getType() == Card.Type.WILD_DRAW_FOUR) {
+                            else if (topCard.getType() == Card.Type.WILD || topCard.getType() == Card.Type.WILD_DRAW_FOUR) {
                                 // For wild cards, check against the current color
                                 isPlayable = (card.getColor() == game.getCurrentColor() || card.getColor() == Card.Color.WILD);
                             } else {
                                 // Regular card matching
                                 isPlayable = card.canBePlayedOn(topCard);
                             }
-                            
-                            // Special check for Wild Draw Four - only playable if there are no matching cards
-                            if (isPlayable && card.getType() == Card.Type.WILD_DRAW_FOUR) {
-                                // Check if player has any cards matching the current color
-                                boolean hasMatchingCards = false;
-                                for (Card handCard : game.getPlayers().get(0).getHand()) {
-                                    // Skip the Wild Draw Four card itself
-                                    if (handCard == card) continue;
-                                    
-                                    // Check if any card matches color or is a regular wild
-                                    if ((topCard.getType() == Card.Type.WILD || topCard.getType() == Card.Type.WILD_DRAW_FOUR) && 
-                                        (handCard.getColor() == game.getCurrentColor() || 
-                                        (handCard.getColor() == Card.Color.WILD && handCard.getType() != Card.Type.WILD_DRAW_FOUR))) {
-                                        hasMatchingCards = true;
-                                        break;
-                                    } else if (handCard.getColor() == topCard.getColor() || 
-                                              handCard.getType() == topCard.getType() || 
-                                              handCard.getColor() == Card.Color.WILD) {
-                                        hasMatchingCards = true;
-                                        break;
-                                    }
-                                }
-                                
-                                // Only mark as playable if player has no matching cards
-                                if (hasMatchingCards) {
-                                    isPlayable = false;
-                                }
-                            }
                         }
                         
-                        // Apply visual effect based on playability
-                        if (!isPlayable) {
-                            // Make unplayable cards appear faded
-                            cardView.setOpacity(0.5);
-                            cardView.setEffect(new ColorAdjust(0, -0.5, -0.5, 0)); // Reduce saturation and brightness
-                        } else {
-                            // Highlight playable cards
-                            cardView.setOpacity(1.0);
-                            cardView.setEffect(null);
+                        // Special check for Wild Draw Four - only playable if there are no matching cards
+                        if (isPlayable && card.getType() == Card.Type.WILD_DRAW_FOUR) {
+                            // Check if player has any cards matching the current color
+                            boolean hasMatchingCards = false;
+                            for (Card handCard : game.getPlayers().get(0).getHand()) {
+                                // Skip the Wild Draw Four card itself
+                                if (handCard == card) continue;
+                                
+                                // Check if any card matches color or is a regular wild
+                                if ((topCard.getType() == Card.Type.WILD || topCard.getType() == Card.Type.WILD_DRAW_FOUR) && 
+                                    (handCard.getColor() == game.getCurrentColor() || 
+                                    (handCard.getColor() == Card.Color.WILD && handCard.getType() != Card.Type.WILD_DRAW_FOUR))) {
+                                    hasMatchingCards = true;
+                                    break;
+                                } else if (handCard.getColor() == topCard.getColor() || 
+                                          handCard.getType() == topCard.getType() || 
+                                          handCard.getColor() == Card.Color.WILD) {
+                                    hasMatchingCards = true;
+                                    break;
+                                }
+                            }
+                            
+                            // Only mark as playable if player has no matching cards
+                            if (hasMatchingCards) {
+                                isPlayable = false;
+                            }
                         }
                     } else {
                         // Not player's turn - all cards appear normal
+                        cardView.setOpacity(1.0);
+                        cardView.setEffect(null);
+                    }
+                    
+                    // Apply visual effect based on playability
+                    if (!isPlayable) {
+                        // Make unplayable cards appear faded
+                        cardView.setOpacity(0.5);
+                        cardView.setEffect(new ColorAdjust(0, -0.5, -0.5, 0)); // Reduce saturation and brightness
+                    } else {
+                        // Highlight playable cards
                         cardView.setOpacity(1.0);
                         cardView.setEffect(null);
                     }
@@ -546,25 +562,11 @@ public class GameBoardController {
                 // Show CPU cards face-up for testing purposes as requested by professor
                 for (Card card : cpuPlayer.getHand()) {
                     try {
-                        String imagePath = "/images/cards/" + card.getImageFileName();
-                        InputStream stream = getClass().getResourceAsStream(imagePath);
-                        
-                        if (stream != null) {
-                            //System.out.println("Loading card image: " + imagePath);
-                            ImageView cardView = new ImageView(new Image(stream));
-                            cardView.setFitWidth(60);
-                            cardView.setFitHeight(90);
-                            pane.getChildren().add(cardView);
-                        } else {
-                            // Fallback if image can't be loaded
-                            Rectangle rect = new Rectangle(60, 90, Color.DARKGRAY);
-                            rect.setStroke(Color.BLACK);
-                            rect.setStrokeWidth(2);
-                            Text cardText = new Text(card.toString());
-                            StackPane stack = new StackPane();
-                            stack.getChildren().addAll(rect, cardText);
-                            pane.getChildren().add(stack);
-                        }
+                        // Use the same card image creation logic as for player cards
+                        ImageView cardView = createCardImageView(card);
+                        cardView.setFitWidth(60);
+                        cardView.setFitHeight(90);
+                        pane.getChildren().add(cardView);
                     } catch (Exception e) {
                         System.err.println("Error loading CPU card image: " + e.getMessage());
                         
@@ -625,7 +627,8 @@ public class GameBoardController {
     private static final Map<String, Image> cardImageCache = new HashMap<>();
     // Hard-coded fallback images for problematic cards
     private static final String[] KNOWN_PROBLEMATIC_CARDS = {
-        "wild-draw-four.png", "wild.png",
+        "wild.png", "wild-draw-four.png",
+        "wild-skip-all.png", "wild-color-draw.png", "wild-swap-hands.png",
         "red_draw-two.png", "blue_draw-two.png", "green_draw-two.png", "yellow_draw-two.png",
         "red_skip.png", "blue_skip.png", "green_skip.png", "yellow_skip.png",
         "red_reverse.png", "blue_reverse.png", "green_reverse.png", "yellow_reverse.png"
@@ -650,9 +653,14 @@ public class GameBoardController {
             loadAndCacheImage(CARD_IMAGES_PATH + color.toString() + "_draw-two.png");
         }
         
-        // Wild cards
+        // Wild cards - using the correct file naming pattern
         loadAndCacheImage(CARD_IMAGES_PATH + "wild.png");
         loadAndCacheImage(CARD_IMAGES_PATH + "wild-draw-four.png");
+        
+        // Bonus cards
+        loadAndCacheImage(CARD_IMAGES_PATH + "wild-skip-all.png");
+        loadAndCacheImage(CARD_IMAGES_PATH + "wild-color-draw.png");
+        loadAndCacheImage(CARD_IMAGES_PATH + "wild-swap-hands.png");
         
         System.out.println("Card image preloading complete. Cached " + cardImageCache.size() + " images.");
     }
@@ -690,32 +698,57 @@ public class GameBoardController {
             Image cardImage = cardImageCache.get(imagePath);
             
             if (cardImage == null) {
-                // Try loading with alternative naming (handling inconsistencies)
-                String altImageName = imageName.replace("_", "-");
-                String altImagePath = CARD_IMAGES_PATH + altImageName;
-                cardImage = cardImageCache.get(altImagePath);
-                
-                if (cardImage == null) {
-                    // Last attempt - load directly
-                    InputStream imageStream = getClass().getResourceAsStream(imagePath);
+                // Special handling for wild cards and bonus cards
+                if (card.getType() == Card.Type.WILD || card.getType() == Card.Type.WILD_DRAW_FOUR ||
+                    card.getType() == Card.Type.SKIP_ALL || card.getType() == Card.Type.COLOR_DRAW ||
+                    card.getType() == Card.Type.SWAP_HANDS) {
                     
-                    if (imageStream != null) {
-                        cardImage = new Image(imageStream);
-                        // Cache for future use
-                        cardImageCache.put(imagePath, cardImage);
-                    } else {
-                        // Try alternative path with dash instead of underscore
-                        imageStream = getClass().getResourceAsStream(altImagePath);
+                    // Try different naming patterns for wild cards
+                    String[] possiblePaths = {
+                        CARD_IMAGES_PATH + imageName,
+                        CARD_IMAGES_PATH + "wild.png",  // Direct path for basic wild
+                        CARD_IMAGES_PATH + "wild-draw-four.png",  // Direct path for wild draw four
+                        CARD_IMAGES_PATH + "wild-" + card.getType().toString() + ".png",
+                        CARD_IMAGES_PATH + card.getType().toString() + ".png"
+                    };
+                    
+                    for (String path : possiblePaths) {
+                        InputStream imageStream = getClass().getResourceAsStream(path);
                         if (imageStream != null) {
                             cardImage = new Image(imageStream);
+                            cardImageCache.put(imagePath, cardImage); // Cache with original path
+                            System.out.println("Successfully loaded wild card image from: " + path);
+                            break;
+                        }
+                    }
+                } else {
+                    // Try loading with alternative naming (handling inconsistencies)
+                    String altImageName = imageName.replace("_", "-");
+                    String altImagePath = CARD_IMAGES_PATH + altImageName;
+                    cardImage = cardImageCache.get(altImagePath);
+                    
+                    if (cardImage == null) {
+                        // Last attempt - load directly
+                        InputStream imageStream = getClass().getResourceAsStream(imagePath);
+                        
+                        if (imageStream != null) {
+                            cardImage = new Image(imageStream);
+                            // Cache for future use
                             cardImageCache.put(imagePath, cardImage);
                         } else {
-                            // Only log warning once per missing image
-                            if (!cardImageCache.containsKey(imagePath)) {
-                                System.err.println("Card image not found: " + imagePath);
-                                cardImageCache.put(imagePath, null); // Mark as attempted
+                            // Try alternative path with dash instead of underscore
+                            imageStream = getClass().getResourceAsStream(altImagePath);
+                            if (imageStream != null) {
+                                cardImage = new Image(imageStream);
+                                cardImageCache.put(imagePath, cardImage);
+                            } else {
+                                // Only log warning once per missing image
+                                if (!cardImageCache.containsKey(imagePath)) {
+                                    System.err.println("Card image not found: " + imagePath);
+                                    cardImageCache.put(imagePath, null); // Mark as attempted
+                                }
+                                return createCardPlaceholder(card);
                             }
-                            return createCardPlaceholder(card);
                         }
                     }
                 }
@@ -919,8 +952,19 @@ public class GameBoardController {
         // Check if the card can be played
         boolean canPlay = false;
         
+        // Bonus cards are always playable
+        if (card.getType() == Card.Type.SKIP_ALL || card.getType() == Card.Type.COLOR_DRAW || card.getType() == Card.Type.SWAP_HANDS) {
+            canPlay = true;
+            System.out.println("Bonus card " + card.getType() + " is always playable");
+        }
+        // Any card can be played on top of Skip All, Color Draw, or Swap Hands
+        else if (topCard.getType() == Card.Type.SKIP_ALL || topCard.getType() == Card.Type.COLOR_DRAW || 
+                topCard.getType() == Card.Type.SWAP_HANDS) {
+            canPlay = true;
+            System.out.println("Card can be played because " + topCard.getType() + " allows any card to be played on top of it");
+        }
         // If the top card is a wild card, check against the current color
-        if (topCard.getType() == Card.Type.WILD || topCard.getType() == Card.Type.WILD_DRAW_FOUR) {
+        else if (topCard.getType() == Card.Type.WILD || topCard.getType() == Card.Type.WILD_DRAW_FOUR) {
             canPlay = (card.getColor() == game.getCurrentColor() || card.getColor() == Card.Color.WILD);
             System.out.println("Checking if card " + card + " can be played on wild card with color " + game.getCurrentColor() + ": " + canPlay);
         } else {
@@ -976,6 +1020,60 @@ public class GameBoardController {
                 }
                 waitingForColorSelection = true;
                 showMessage("Select a color for your wild card");
+            } else if (card.getType() == Card.Type.SKIP_ALL) {
+                // Skip All card is always playable if it matches color
+                lastPlayedCard = card;
+                
+                // Play the Skip All card
+                boolean played = game.playCard(cardIndex);
+                if (!played) {
+                    showMessage("Failed to play Skip All card!");
+                    return;
+                }
+                
+                showMessage("Skip All card played - your turn again!");
+                
+                // Since the Skip All card keeps the turn with the current player,
+                // we just need to update the UI without starting a CPU turn sequence
+                updateGameUI();
+                
+                // Update the player's hand to show the new state
+                updatePlayerHand();
+            } else if (card.getType() == Card.Type.COLOR_DRAW) {
+                // Color Draw card is always playable if it matches color
+                lastPlayedCard = card;
+                
+                // Play the Color Draw card
+                boolean played = game.playCard(cardIndex);
+                if (!played) {
+                    showMessage("Failed to play Color Draw card!");
+                    return;
+                }
+                
+                // Show color selection pane
+                if (colorSelectionPane != null) {
+                    colorSelectionPane.setVisible(true);
+                }
+                waitingForColorSelection = true;
+                showMessage("Select a color for your Color Draw card");
+            } else if (card.getType() == Card.Type.SWAP_HANDS) {
+                // Swap Hands card is always playable if it matches color
+                lastPlayedCard = card;
+                
+                // Play the Swap Hands card
+                boolean played = game.playCard(cardIndex);
+                if (!played) {
+                    showMessage("Failed to play Swap Hands card!");
+                    return;
+                }
+                
+                showMessage("Swap Hands card played - swapping hands with next player!");
+                updateGameUI();
+                
+                // If it's a CPU's turn now, play it
+                if (!isHumanTurn()) {
+                    startCpuTurnSequence();
+                }
             } else {
                 // For non-wild cards, play immediately
                 boolean played = game.playCard(cardIndex);
@@ -1249,7 +1347,8 @@ public class GameBoardController {
         // First check if the cheat buttons are even present in the FXML
         if (cheatSkipButton == null || cheatReverseButton == null || 
             cheatDrawTwoButton == null || cheatWildButton == null || 
-            cheatWildDrawFourButton == null) {
+            cheatWildDrawFourButton == null || cheatSkipAllButton == null || 
+            cheatColorDrawButton == null || cheatSwapHandsButton == null) {
             System.out.println("Cheat buttons not found in FXML. Skipping initialization.");
             return;
         }
@@ -1308,6 +1407,39 @@ public class GameBoardController {
                 showMessage("You can only use cheats during your turn!");
             }
         });
+        
+        // Set up the Skip All cheat button
+        cheatSkipAllButton.setOnAction(event -> {
+            if (isHumanTurn()) {
+                System.out.println("Using Skip All cheat");
+                addCheatCardToHand(Card.Type.SKIP_ALL);
+                showMessage("Skip All card added to your hand");
+            } else {
+                showMessage("You can only use cheats during your turn!");
+            }
+        });
+        
+        // Set up the Color Draw cheat button
+        cheatColorDrawButton.setOnAction(event -> {
+            if (isHumanTurn()) {
+                System.out.println("Using Color Draw cheat");
+                addCheatCardToHand(Card.Type.COLOR_DRAW);
+                showMessage("Color Draw card added to your hand");
+            } else {
+                showMessage("You can only use cheats during your turn!");
+            }
+        });
+        
+        // Set up the Swap Hands cheat button
+        cheatSwapHandsButton.setOnAction(event -> {
+            if (isHumanTurn()) {
+                System.out.println("Using Swap Hands cheat");
+                addCheatCardToHand(Card.Type.SWAP_HANDS);
+                showMessage("Swap Hands card added to your hand");
+            } else {
+                showMessage("You can only use cheats during your turn!");
+            }
+        });
     }
     
     // Helper method to add a cheat card to the player's hand
@@ -1315,8 +1447,10 @@ public class GameBoardController {
         // Create a new card based on the requested type
         Card cheatCard;
         
-        // For wild cards
-        if (cardType == Card.Type.WILD || cardType == Card.Type.WILD_DRAW_FOUR) {
+        // For wild cards and bonus cards
+        if (cardType == Card.Type.WILD || cardType == Card.Type.WILD_DRAW_FOUR ||
+            cardType == Card.Type.SKIP_ALL || cardType == Card.Type.COLOR_DRAW ||
+            cardType == Card.Type.SWAP_HANDS) {
             cheatCard = new Card(Card.Color.WILD, cardType);
         } 
         // For action cards (Skip, Reverse, Draw Two)
