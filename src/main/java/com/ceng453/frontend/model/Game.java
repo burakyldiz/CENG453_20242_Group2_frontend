@@ -65,7 +65,79 @@ public class Game {
         public void removeWildCards() {
             cards.removeIf(card -> card.getColor() == Card.Color.WILD);
         }
+        
+        public void initializeMultiplayerDeck() {
+            cards.clear();
+            
+            // Add number cards (0-9) for each color
+            for (Card.Color color : new Card.Color[]{Card.Color.RED, Card.Color.YELLOW, Card.Color.GREEN, Card.Color.BLUE}) {
+                // Add one zero card per color
+                cards.add(new Card(color, 0));
+                
+                // Add two of each number 1-9 per color
+                for (int i = 1; i <= 9; i++) {
+                    cards.add(new Card(color, i));
+                    cards.add(new Card(color, i));
+                }
+                
+                // Add two of each special card per color (except wilds)
+                cards.add(new Card(color, Card.Type.SKIP));
+                cards.add(new Card(color, Card.Type.SKIP));
+                cards.add(new Card(color, Card.Type.REVERSE));
+                cards.add(new Card(color, Card.Type.REVERSE));
+                cards.add(new Card(color, Card.Type.DRAW_TWO));
+                cards.add(new Card(color, Card.Type.DRAW_TWO));
+            }
+            
+            // Add wild cards (4 of each)
+            for (int i = 0; i < 4; i++) {
+                cards.add(new Card(Card.Color.WILD, Card.Type.WILD));
+                cards.add(new Card(Card.Color.WILD, Card.Type.WILD_DRAW_FOUR));
+            }
+            
+            // NO BONUS CARDS in multiplayer: SKIP_ALL, COLOR_DRAW, SWAP_HANDS are excluded
+            
+            System.out.println("Fallback: Initialized multiplayer deck with " + cards.size() + " cards");
+            shuffle();
+        }
     }
+    
+    // Adapter class to allow DeckFallback to work with Deck interface
+    private static class DeckAdapter extends Deck {
+        private final DeckFallback fallbackDeck;
+        
+        public DeckAdapter(DeckFallback fallbackDeck) {
+            super(); // Call parent constructor
+            this.fallbackDeck = fallbackDeck;
+        }
+        
+        @Override
+        public void initializeMultiplayerDeck() {
+            fallbackDeck.initializeMultiplayerDeck();
+        }
+        
+        @Override
+        public Card drawCard() {
+            return fallbackDeck.drawCard();
+        }
+        
+        @Override
+        public void shuffle() {
+            fallbackDeck.shuffle();
+        }
+        
+        @Override
+        public boolean isEmpty() {
+            return fallbackDeck.isEmpty();
+        }
+        
+        @Override
+        public Card drawInitialCard() {
+            // Use fallback's draw method for initial card
+            return fallbackDeck.drawCard();
+        }
+    }
+    
     private List<Player> players;
     private Deck deck;
     private List<Card> discardPile;
@@ -141,6 +213,14 @@ public class Game {
             players.add(new Player(name, true));
         }
         
+        // Initialize multiplayer-specific deck (without problematic special cards)
+        if (deck instanceof Deck) {
+            ((Deck) deck).initializeMultiplayerDeck();
+        } else {
+            // Fallback deck should also exclude special cards for multiplayer
+            deck.shuffle();
+        }
+        
         // Deal 7 cards to each player
         for (Player player : players) {
             for (int i = 0; i < 7; i++) {
@@ -157,6 +237,8 @@ public class Game {
         if (initialCard.getType() != Card.Type.NUMBER) {
             handleActionCard(initialCard);
         }
+        
+        System.out.println("Multiplayer game initialized with " + playerNames.size() + " players");
     }
     
     // Method to play a card from the current player's hand
@@ -932,6 +1014,18 @@ public class Game {
     public void setCurrentColor(Card.Color color) {
         this.currentColor = color;
         System.out.println("Color set to: " + color);
+    }
+    
+    public void setCurrentPlayerIndex(int index) {
+        if (index >= 0 && index < players.size()) {
+            this.currentPlayerIndex = index;
+            System.out.println("Current player index set to: " + index);
+        }
+    }
+    
+    public void setDirection(boolean clockwise) {
+        this.isClockwise = clockwise;
+        System.out.println("Direction set to: " + (clockwise ? "Clockwise" : "Counterclockwise"));
     }
     
     public boolean isClockwise() {

@@ -10,6 +10,7 @@ com/ceng453/frontend/model/Game.class
 com/ceng453/frontend/model/Card$Type.class
 com/ceng453/frontend/controller/LeaderboardController$LeaderboardEntry.class
 com/ceng453/frontend/controller/LoginController.class
+com/ceng453/frontend/controller/MultiplayerGameBoardController$1.class
 com/ceng453/frontend/controller/RegisterController.class
 com/ceng453/frontend/controller/LeaderboardController.class
 com/ceng453/frontend/controller/GameBoardController.class

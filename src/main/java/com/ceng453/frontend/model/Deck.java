@@ -39,10 +39,45 @@ public class Deck {
             cards.add(new Card(Card.Color.WILD, Card.Type.WILD_DRAW_FOUR));
         }
         
-        // Add bonus cards (1 of each type)
+        // Add bonus cards (1 of each type) - ONLY FOR SINGLE PLAYER
         cards.add(new Card(Card.Color.WILD, Card.Type.SKIP_ALL));
         cards.add(new Card(Card.Color.WILD, Card.Type.COLOR_DRAW));
         cards.add(new Card(Card.Color.WILD, Card.Type.SWAP_HANDS));
+    }
+    
+    // Initialize a multiplayer-specific UNO deck (without problematic special cards)
+    public void initializeMultiplayerDeck() {
+        cards.clear();
+        
+        // Add number cards (0-9) for each color
+        for (Card.Color color : new Card.Color[]{Card.Color.RED, Card.Color.YELLOW, Card.Color.GREEN, Card.Color.BLUE}) {
+            // Add one zero card per color
+            cards.add(new Card(color, 0));
+            
+            // Add two of each number card 1-9 per color
+            for (int i = 1; i <= 9; i++) {
+                cards.add(new Card(color, i));
+                cards.add(new Card(color, i));
+            }
+            
+            // Add action cards (two of each per color)
+            for (int i = 0; i < 2; i++) {
+                cards.add(new Card(color, Card.Type.SKIP));
+                cards.add(new Card(color, Card.Type.REVERSE));
+                cards.add(new Card(color, Card.Type.DRAW_TWO));
+            }
+        }
+        
+        // Add wild cards (4 of each type)
+        for (int i = 0; i < 4; i++) {
+            cards.add(new Card(Card.Color.WILD, Card.Type.WILD));
+            cards.add(new Card(Card.Color.WILD, Card.Type.WILD_DRAW_FOUR));
+        }
+        
+        // NO BONUS CARDS in multiplayer: SKIP_ALL, COLOR_DRAW, SWAP_HANDS are excluded
+        
+        System.out.println("Initialized multiplayer deck with " + cards.size() + " cards (no SKIP_ALL, COLOR_DRAW, or SWAP_HANDS)");
+        shuffle();
     }
     
     public void shuffle() {

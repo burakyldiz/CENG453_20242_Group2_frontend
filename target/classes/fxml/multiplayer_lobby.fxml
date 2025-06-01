@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ceng453.frontend.controller.MultiplayerLobbyController">
+   <top>
+      <VBox BorderPane.alignment="CENTER">
+         <children>
+            <Label text="Multiplayer Lobby">
+               <font>
+                  <Font name="System Bold" size="24.0" />
+               </font>
+            </Label>
+            <Separator />
+         </children>
+         <padding>
+            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+         </padding>
+      </VBox>
+   </top>
+   <center>
+      <HBox spacing="10.0" BorderPane.alignment="CENTER">
+         <children>
+            <!-- Left panel - Create/Join Games -->
+            <VBox spacing="10.0" prefWidth="300.0">
+               <children>
+                  <Label text="Create or Join Game">
+                     <font>
+                        <Font name="System Bold" size="16.0" />
+                     </font>
+                  </Label>
+                  
+                  <Button fx:id="createGameButton" onAction="#createGame" text="Create New Game" prefWidth="200.0" />
+                  
+                  <HBox spacing="5.0">
+                     <children>
+                        <TextField fx:id="sessionCodeField" promptText="Session Code" prefWidth="120.0" />
+                        <Button fx:id="joinGameButton" onAction="#joinGame" text="Join Game" prefWidth="75.0" />
+                     </children>
+                  </HBox>
+                  
+                  <Label text="Available Games:" />
+                  <ListView fx:id="availableGamesList" prefHeight="150.0" />
+                  <Button fx:id="refreshGamesButton" onAction="#refreshAvailableGames" text="Refresh Games" prefWidth="200.0" />
+               </children>
+               <padding>
+                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+               </padding>
+            </VBox>
+            
+            <!-- Middle panel - Current Session -->
+            <VBox fx:id="currentSessionPane" spacing="10.0" prefWidth="300.0" visible="false">
+               <children>
+                  <Label text="Current Session">
+                     <font>
+                        <Font name="System Bold" size="16.0" />
+                     </font>
+                  </Label>
+                  
+                  <Label fx:id="sessionCodeLabel" text="Session Code: " />
+                  <Label fx:id="sessionStatusLabel" text="Status: " />
+                  
+                  <Label text="Players:" />
+                  <ListView fx:id="playersList" prefHeight="100.0" />
+                  
+                  <HBox spacing="5.0">
+                     <children>
+                        <Button fx:id="startGameButton" onAction="#startGame" text="Start Game" prefWidth="100.0" />
+                        <Button fx:id="leaveGameButton" onAction="#leaveGame" text="Leave Game" prefWidth="100.0" />
+                     </children>
+                  </HBox>
+               </children>
+               <padding>
+                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+               </padding>
+            </VBox>
+            
+            <!-- Right panel - Status/Log -->
+            <VBox spacing="10.0" prefWidth="300.0">
+               <children>
+                  <Label text="Status Log">
+                     <font>
+                        <Font name="System Bold" size="16.0" />
+                     </font>
+                  </Label>
+                  <TextArea fx:id="statusArea" prefHeight="300.0" editable="false" wrapText="true" />
+               </children>
+               <padding>
+                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+               </padding>
+            </VBox>
+         </children>
+         <padding>
+            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+         </padding>
+      </HBox>
+   </center>
+   <bottom>
+      <HBox BorderPane.alignment="CENTER">
+         <children>
+            <Button fx:id="backButton" onAction="#goBack" text="Back to Main Menu" />
+         </children>
+         <padding>
+            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+         </padding>
+      </HBox>
+   </bottom>
+</BorderPane> 

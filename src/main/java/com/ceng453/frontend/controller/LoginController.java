@@ -55,21 +55,17 @@ public class LoginController {
         
         // Call the login API
         apiService.login(username, password)
-            .subscribe(response -> {
+            .subscribe(user -> {
                 Platform.runLater(() -> {
-                    if (response.startsWith("Error:")) {
-                        statusLabel.setText("Login failed: Invalid username or password");
-                        loginButton.setDisable(false);
-                    } else {
-                        // Login successful, create user object
-                        User user = new User();
-                        user.setUsername(username);
-                        
-                        // Set user in scene manager
+                    if (user != null) {
+                        // Login successful, set user in scene manager
                         sceneManager.setCurrentUser(user);
                         
                         // Navigate to main menu
                         sceneManager.showMainMenuScene();
+                    } else {
+                        statusLabel.setText("Login failed: Invalid username or password");
+                        loginButton.setDisable(false);
                     }
                 });
             }, error -> {

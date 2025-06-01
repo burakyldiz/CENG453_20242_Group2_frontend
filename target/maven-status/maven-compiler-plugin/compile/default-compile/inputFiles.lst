@@ -1,3 +1,4 @@
+/Users/burak/Desktop/uno2/CENG453_20242_Group2_frontend/src/main/java/com/ceng453/frontend/controller/MultiplayerLobbyController.java
 /Users/burak/Desktop/uno2/CENG453_20242_Group2_frontend/src/main/java/com/ceng453/frontend/ui/SceneManager.java
 /Users/burak/Desktop/uno2/CENG453_20242_Group2_frontend/src/main/java/com/ceng453/frontend/UnoApplication.java
 /Users/burak/Desktop/uno2/CENG453_20242_Group2_frontend/src/main/java/com/ceng453/frontend/model/Game.java
@@ -5,6 +6,7 @@
 /Users/burak/Desktop/uno2/CENG453_20242_Group2_frontend/src/main/java/com/ceng453/frontend/controller/LoginController.java
 /Users/burak/Desktop/uno2/CENG453_20242_Group2_frontend/src/main/java/com/ceng453/frontend/controller/MainMenuController.java
 /Users/burak/Desktop/uno2/CENG453_20242_Group2_frontend/src/main/java/com/ceng453/frontend/controller/GameBoardController.java
+/Users/burak/Desktop/uno2/CENG453_20242_Group2_frontend/src/main/java/com/ceng453/frontend/controller/MultiplayerGameBoardController.java
 /Users/burak/Desktop/uno2/CENG453_20242_Group2_frontend/src/main/java/com/ceng453/frontend/model/User.java
 /Users/burak/Desktop/uno2/CENG453_20242_Group2_frontend/src/main/java/com/ceng453/frontend/model/Card.java
 /Users/burak/Desktop/uno2/CENG453_20242_Group2_frontend/src/main/java/com/ceng453/frontend/model/DeckAdapter.java
@@ -12,4 +14,5 @@
 /Users/burak/Desktop/uno2/CENG453_20242_Group2_frontend/src/main/java/com/ceng453/frontend/controller/LeaderboardController.java
 /Users/burak/Desktop/uno2/CENG453_20242_Group2_frontend/src/main/java/com/ceng453/frontend/model/Deck.java
 /Users/burak/Desktop/uno2/CENG453_20242_Group2_frontend/src/main/java/com/ceng453/frontend/service/ApiService.java
+/Users/burak/Desktop/uno2/CENG453_20242_Group2_frontend/src/main/java/com/ceng453/frontend/service/MultiplayerPollingService.java
 /Users/burak/Desktop/uno2/CENG453_20242_Group2_frontend/src/main/java/com/ceng453/frontend/model/Player.java

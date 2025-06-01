@@ -50,7 +50,7 @@ public class ApiService {
                 });
     }
 
-    public Mono<String> login(String username, String password) {
+    public Mono<User> login(String username, String password) {
         Map<String, String> request = new HashMap<>();
         request.put("username", username);
         request.put("password", password);
@@ -59,11 +59,11 @@ public class ApiService {
                 .uri("/users/login")
                 .bodyValue(request)
                 .retrieve()
-                .bodyToMono(String.class)
+                .bodyToMono(User.class)
                 .onErrorResume(WebClientResponseException.class, ex -> {
                     String errorMessage = ex.getResponseBodyAsString();
                     System.err.println("Login error: " + errorMessage);
-                    return Mono.just("Error: " + errorMessage);
+                    return Mono.empty();
                 });
     }
 
@@ -148,6 +148,125 @@ public class ApiService {
                     System.err.println("Record game result error: " + errorMessage);
                     return Mono.just("Error: " + errorMessage);
                 });
+    }
+
+    // Multiplayer Methods
+    public Mono<List<Map<String, Object>>> getAvailableGames() {
+        return webClient.get()
+                .uri("/api/multiplayer/available")
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {})
+                .onErrorResume(WebClientResponseException.class, ex -> {
+                    System.err.println("Get available games error: " + ex.getMessage());
+                    return Mono.empty();
+                });
+    }
+
+    public Mono<Map<String, Object>> createGameSession(Long userId) {
+        Map<String, Object> request = new HashMap<>();
+        request.put("userId", userId);
+
+        return webClient.post()
+                .uri("/api/multiplayer/create")
+                .bodyValue(request)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                .onErrorResume(WebClientResponseException.class, ex -> {
+                    String errorMessage = ex.getResponseBodyAsString();
+                    System.err.println("Create game session error: " + errorMessage);
+                    return Mono.empty();
+                });
+    }
+
+    public Mono<Map<String, Object>> joinGameSession(String sessionCode, Long userId) {
+        Map<String, Object> request = new HashMap<>();
+        request.put("sessionCode", sessionCode);
+        request.put("userId", userId);
+
+        return webClient.post()
+                .uri("/api/multiplayer/join")
+                .bodyValue(request)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                .onErrorResume(WebClientResponseException.class, ex -> {
+                    String errorMessage = ex.getResponseBodyAsString();
+                    System.err.println("Join game session error: " + errorMessage);
+                    return Mono.empty();
+                });
+    }
+
+    public Mono<Map<String, Object>> startGame(String sessionCode, Long userId) {
+        Map<String, Object> request = new HashMap<>();
+        request.put("sessionCode", sessionCode);
+        request.put("userId", userId);
+
+        return webClient.post()
+                .uri("/api/multiplayer/start")
+                .bodyValue(request)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                .onErrorResume(WebClientResponseException.class, ex -> {
+                    String errorMessage = ex.getResponseBodyAsString();
+                    System.err.println("Start game error: " + errorMessage);
+                    return Mono.empty();
+                });
+    }
+
+    public Mono<Map<String, Object>> getGameState(String sessionCode) {
+        return webClient.get()
+                .uri("/api/multiplayer/state/{sessionCode}", sessionCode)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                .onErrorResume(WebClientResponseException.class, ex -> {
+                    System.err.println("Get game state error: " + ex.getMessage());
+                    return Mono.empty();
+                });
+    }
+
+    public Mono<Map<String, Object>> getGameStateIfUpdated(String sessionCode, String lastUpdate) {
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                    .path("/api/multiplayer/state/{sessionCode}")
+                    .queryParam("lastUpdate", lastUpdate)
+                    .build(sessionCode))
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                .onErrorResume(WebClientResponseException.class, ex -> {
+                    if (ex.getStatusCode().value() == 304) {
+                        // No updates - return empty to indicate no changes
+                        return Mono.empty();
+                    }
+                    System.err.println("Get game state if updated error: " + ex.getMessage());
+                    return Mono.empty();
+                });
+    }
+
+    public Mono<String> leaveGameSession(String sessionCode, Long userId) {
+        Map<String, Object> request = new HashMap<>();
+        request.put("sessionCode", sessionCode);
+        request.put("userId", userId);
+        
+        return webClient.post()
+                .uri("/api/multiplayer/leave")
+                .bodyValue(request)
+                .retrieve()
+                .bodyToMono(String.class);
+    }
+
+    public Mono<Map<String, Object>> sendGameMove(String sessionCode, Long userId, String moveType, Map<String, Object> moveData) {
+        Map<String, Object> request = new HashMap<>();
+        request.put("sessionCode", sessionCode);
+        request.put("userId", userId);
+        request.put("type", moveType);
+        
+        // Add all move-specific data
+        request.putAll(moveData);
+        
+        return webClient.post()
+                .uri("/api/multiplayer/move")
+                .bodyValue(request)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
     }
 
     // Helper methods
