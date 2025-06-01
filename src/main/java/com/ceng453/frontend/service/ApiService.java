@@ -268,7 +268,7 @@ public class ApiService {
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
     }
-
+    
     // Helper methods
     private String toJson(Object object) {
         try {
@@ -276,5 +276,35 @@ public class ApiService {
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to convert object to JSON", e);
         }
+    }
+    
+    /**
+     * Records the result of a multiplayer game.
+     * Adds +1 to the winner's score and -1 to all other players' scores.
+     * 
+     * @param winnerId The ID of the winning player
+     * @param playerIds List of all player IDs who participated in the game
+     * @return A Mono containing the response from the server
+     */
+    public Mono<String> recordMultiplayerGameResult(Long winnerId, List<Long> playerIds) {
+        Map<String, Object> request = new HashMap<>();
+        request.put("winnerId", winnerId);
+        request.put("playerIds", playerIds);
+
+        System.out.println("Recording multiplayer game result for winner ID: " + winnerId + ", players: " + playerIds);
+
+        return webClient.post()
+                .uri("/games/record")
+                .bodyValue(request)
+                .retrieve()
+                .bodyToMono(String.class)
+                .doOnSuccess(response -> {
+                    System.out.println("Successfully recorded multiplayer game result: " + response);
+                })
+                .onErrorResume(WebClientResponseException.class, ex -> {
+                    String errorMessage = ex.getResponseBodyAsString();
+                    System.err.println("Record multiplayer game result error: " + errorMessage);
+                    return Mono.just("Error: " + errorMessage);
+                });
     }
 }

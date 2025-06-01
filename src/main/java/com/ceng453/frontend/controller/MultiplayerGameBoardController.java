@@ -53,6 +53,7 @@ public class MultiplayerGameBoardController {
     private String sessionCode;
     private Long currentUserId;
     private Map<String, Object> currentGameState;
+    private boolean gameResultRecorded = false;
     private boolean waitingForColorSelection;
     private Card lastPlayedCard;
     private int myPlayerIndex = -1; // Which player index am I in the game
@@ -392,6 +393,9 @@ public class MultiplayerGameBoardController {
             }
             
             updateGameUI();
+            
+            // Check if any player has won (has zero cards)
+            checkForWinner();
             
         } catch (Exception e) {
             System.err.println("Error updating game from state: " + e.getMessage());
@@ -830,7 +834,79 @@ public class MultiplayerGameBoardController {
     private void handleGameOver() {
         // Handle when local game detects game over
         showMessage("Game Over!");
-        // Additional game over logic...
+        // Additional game over logic is now in checkForWinner()
+    }
+    
+    /**
+     * Checks if any player has won the game (has zero cards) and records the game result.
+     * This will add +1 to the winner's score and -1 to all other players' scores.
+     */
+    private void checkForWinner() {
+        if (game == null || game.getPlayers() == null || gameResultRecorded) {
+            return; // No game or result already recorded
+        }
+        
+        // Check each player to see if they have zero cards
+        for (int i = 0; i < game.getPlayers().size(); i++) {
+            Player player = game.getPlayers().get(i);
+            
+            if (player.getHand().isEmpty()) {
+                // This player has won!
+                Long winnerId = null;
+                List<Long> playerIds = new ArrayList<>();
+                
+                // Get all player IDs from the current game state
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> players = (List<Map<String, Object>>) currentGameState.get("players");
+                
+                if (players != null) {
+                    for (int j = 0; j < players.size(); j++) {
+                        Map<String, Object> playerData = players.get(j);
+                        Long playerId = ((Number) playerData.get("id")).longValue();
+                        playerIds.add(playerId);
+                        
+                        // If this is the winning player, set the winnerId
+                        if (j == i) {
+                            winnerId = playerId;
+                        }
+                    }
+                    
+                    // Record the game result if we have a winner and player IDs
+                    if (winnerId != null && !playerIds.isEmpty()) {
+                        gameResultRecorded = true;
+                        showMessage("Game Over! Player " + player.getName() + " has won!");
+                        
+                        // Record the game result (+1 for winner, -1 for others)
+                        apiService.recordMultiplayerGameResult(winnerId, playerIds)
+                                .subscribe(
+                                    result -> {
+                                        System.out.println("Game result recorded successfully: " + result);
+                                        Platform.runLater(() -> {
+                                            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                                            alert.setTitle("Game Over");
+                                            alert.setHeaderText("Game Result Recorded");
+                                            alert.setContentText(player.getName() + " has won the game!\n\n" +
+                                                                "Scores have been updated: +1 for the winner, -1 for other players.");
+                                            alert.showAndWait();
+                                        });
+                                    },
+                                    error -> {
+                                        System.err.println("Error recording game result: " + error.getMessage());
+                                        Platform.runLater(() -> {
+                                            Alert alert = new Alert(Alert.AlertType.ERROR);
+                                            alert.setTitle("Error");
+                                            alert.setHeaderText("Failed to Record Game Result");
+                                            alert.setContentText("There was an error recording the game result: " + error.getMessage());
+                                            alert.showAndWait();
+                                        });
+                                    }
+                                );
+                    }
+                }
+                
+                break; // Exit the loop once we've found a winner
+            }
+        }
     }
     
     private void showMessage(String message) {
