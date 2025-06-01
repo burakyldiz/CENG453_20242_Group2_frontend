@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/8"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.ceng453.frontend.controller.LobbyController"
+      spacing="20" alignment="CENTER">
+      
+    <!-- Super Basic UI -->
+    <Label text="UNO Multiplayer Lobby"/>
+    
+    <!-- Basic text field -->
+    <TextField fx:id="playerNameLobbyField" text="Player1"/>
+    
+    <!-- Plain Button with minimum properties -->
+    <Button text="Create Game" fx:id="createGameButton" onAction="#handleCreateGame"/>
+    
+    <!-- Game ID field and join button -->
+    <TextField fx:id="gameIdField" promptText="Game ID"/>
+    <Button text="Join Game" fx:id="joinGameButton" onAction="#handleJoinGame"/>
+    
+    <!-- Status display -->
+    <Label fx:id="statusLabel" text="Status: Ready"/>
+    
+    <!-- Login fields -->
+    <VBox spacing="10" alignment="CENTER">
+        <TextField fx:id="usernameField"/>
+        <PasswordField fx:id="passwordField"/>
+        <Button fx:id="loginButton" onAction="#handleLogin"/>
+        <Button fx:id="registerButton" onAction="#handleRegister"/>
+    </VBox>
+    
+    <!-- Back button -->
+    <Button text="Back" onAction="#handleBackToMainMenu"/>
+</VBox>

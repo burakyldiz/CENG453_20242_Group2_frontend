@@ -20,6 +20,39 @@ public class UnoApplication extends Application {
     
     @Override
     public void init() {
+        // Set server port explicitly based on active profile or command line argument
+        String activeProfile = System.getProperty("spring.profiles.active");
+        
+        if (activeProfile != null) {
+            switch (activeProfile) {
+                case "player1":
+                    System.setProperty("server.port", "8083");
+                    System.out.println("Starting Player 1 with server port: 8083");
+                    break;
+                case "player2":
+                    System.setProperty("server.port", "8084");
+                    System.out.println("Starting Player 2 with server port: 8084");
+                    break;
+                default:
+                    // If custom port specified directly, use that
+                    String serverPort = System.getProperty("server.port");
+                    if (serverPort != null && !serverPort.isEmpty()) {
+                        System.out.println("Using specified server port: " + serverPort);
+                    } else {
+                        System.out.println("Using default server port from application.properties");
+                    }
+            }
+        } else {
+            // No profile, check for direct port specification
+            String serverPort = System.getProperty("server.port");
+            if (serverPort != null && !serverPort.isEmpty()) {
+                System.out.println("Using specified server port: " + serverPort);
+            } else {
+                System.out.println("Using default server port from application.properties");
+            }
+        }
+        
+        // Start Spring Boot application context
         springContext = SpringApplication.run(UnoApplication.class, savedArgs);
     }
     

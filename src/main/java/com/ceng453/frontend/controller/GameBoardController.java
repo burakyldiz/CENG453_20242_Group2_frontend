@@ -67,7 +67,7 @@ public class GameBoardController {
     @FXML private FlowPane cpu3HandPane;
     
     @FXML private StackPane discardPilePane;
-    @FXML private HBox colorSelectionPane;
+    @FXML private HBox colorSelectPane;
     
     @FXML private Circle playerTurn;
     @FXML private Circle cpu1Turn;
@@ -188,8 +188,8 @@ public class GameBoardController {
             }
             
             // Hide the color selection pane
-            if (colorSelectionPane != null) {
-                colorSelectionPane.setVisible(false);
+            if (colorSelectPane != null) {
+                colorSelectPane.setVisible(false);
             }
             waitingForColorSelection = false;
             
@@ -231,8 +231,8 @@ public class GameBoardController {
             preloadCardImages();
             
             // Hide color selection pane initially
-            if (colorSelectionPane != null) {
-                colorSelectionPane.setVisible(false);
+            if (colorSelectPane != null) {
+                colorSelectPane.setVisible(false);
             }
             waitingForColorSelection = false;
             wildDrawFourPlayed = false;
@@ -916,8 +916,8 @@ public class GameBoardController {
                 }
                 
                 // Show color selection pane
-                if (colorSelectionPane != null) {
-                    colorSelectionPane.setVisible(true);
+                if (colorSelectPane != null) {
+                    colorSelectPane.setVisible(true);
                 }
                 waitingForColorSelection = true;
                 showMessage("Select a color for your Wild Draw Four");
@@ -997,8 +997,8 @@ public class GameBoardController {
                 System.out.println("Successfully played Wild Draw Four card");
                 
                 // Show color selection pane for the Wild Draw Four card
-                if (colorSelectionPane != null) {
-                    colorSelectionPane.setVisible(true);
+                if (colorSelectPane != null) {
+                    colorSelectPane.setVisible(true);
                 }
                 waitingForColorSelection = true;
                 showMessage("Select a color for your Wild Draw Four card");
@@ -1015,8 +1015,8 @@ public class GameBoardController {
                 }
                 
                 // Show color selection pane
-                if (colorSelectionPane != null) {
-                    colorSelectionPane.setVisible(true);
+                if (colorSelectPane != null) {
+                    colorSelectPane.setVisible(true);
                 }
                 waitingForColorSelection = true;
                 showMessage("Select a color for your wild card");
@@ -1051,8 +1051,8 @@ public class GameBoardController {
                 }
                 
                 // Show color selection pane
-                if (colorSelectionPane != null) {
-                    colorSelectionPane.setVisible(true);
+                if (colorSelectPane != null) {
+                    colorSelectPane.setVisible(true);
                 }
                 waitingForColorSelection = true;
                 showMessage("Select a color for your Color Draw card");

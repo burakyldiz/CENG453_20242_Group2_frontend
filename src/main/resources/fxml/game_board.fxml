@@ -74,7 +74,8 @@
    <!-- Center Game Area with Discard Pile -->
    <StackPane AnchorPane.topAnchor="180.0" AnchorPane.bottomAnchor="180.0" AnchorPane.leftAnchor="180.0" AnchorPane.rightAnchor="180.0">
       <children>
-         <VBox alignment="CENTER" spacing="20.0">
+          <!-- Explicitly NOT using fx:id on this VBox to avoid binding issues -->
+          <VBox alignment="CENTER" spacing="20.0">
             <children>
                <StackPane fx:id="discardPilePane" alignment="CENTER" prefHeight="120.0" prefWidth="90.0" />
                <Label fx:id="gameStateLabel" text="" textFill="WHITE" wrapText="true">
@@ -83,7 +84,7 @@
                   </font>
                </Label>
                <!-- Wild Color Selection Buttons -->
-               <HBox fx:id="colorSelectionPane" alignment="CENTER" spacing="20.0" visible="false">
+               <HBox fx:id="colorSelectPane" alignment="CENTER" spacing="20.0" visible="false">
                   <children>
                      <Button mnemonicParsing="false" onAction="#selectRedColor" prefHeight="40.0" prefWidth="80.0" style="-fx-background-color: red;" text="Red" textFill="WHITE" />
                      <Button mnemonicParsing="false" onAction="#selectBlueColor" prefHeight="40.0" prefWidth="80.0" style="-fx-background-color: blue;" text="Blue" textFill="WHITE" />

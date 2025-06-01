@@ -30,6 +30,15 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         
+        <!-- Temporarily commented out to allow frontend to build independently -->
+        <!--
+        <dependency>
+            <groupId>com.ceng453</groupId>
+            <artifactId>CENG453_20242_Group2_backend </artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        -->
+
         <!-- JavaFX Dependencies -->
         <dependency>
             <groupId>org.openjfx</groupId>
@@ -115,6 +124,27 @@
                         <option>javafx.graphics/com.sun.javafx.stage=ALL-UNNAMED</option>
                     </options>
                 </configuration>
+            </plugin>
+            <!-- Add dependency plugin to copy all dependencies to target/dependency folder -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/dependency</outputDirectory>
+                            <overWriteReleases>false</overWriteReleases>
+                            <overWriteSnapshots>false</overWriteSnapshots>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                            <includeScope>runtime</includeScope>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

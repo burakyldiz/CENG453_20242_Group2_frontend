@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane maxHeight="Infinity" maxWidth="Infinity" style="-fx-background-color: #1E1E1E;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ceng453.frontend.controller.MultiplayerGameBoardController">
+   <!-- Top Bar with Game Info -->
+   <HBox alignment="CENTER" spacing="50.0" AnchorPane.topAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0">
+      <children>
+         <Label fx:id="currentPlayerLabel" text="Current Player: Waiting..." textFill="WHITE">
+            <font>
+               <Font size="16.0" />
+            </font>
+         </Label>
+         <Label fx:id="currentColorLabel" text="Current Color: None" textFill="WHITE">
+            <font>
+               <Font size="16.0" />
+            </font>
+         </Label>
+         <Label fx:id="directionLabel" text="Direction: Clockwise" textFill="WHITE">
+            <font>
+               <Font size="16.0" />
+            </font>
+         </Label>
+      </children>
+   </HBox>
+   
+   <!-- Opponent Players (Top) -->
+   <HBox alignment="CENTER" spacing="100.0" AnchorPane.topAnchor="60.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0">
+      <children>
+         <VBox fx:id="opponent1Container" alignment="CENTER" spacing="5.0">
+            <children>
+               <HBox alignment="CENTER" spacing="10.0">
+                  <children>
+                     <Label fx:id="opponent1Label" text="Opponent 1" textFill="WHITE">
+                        <font>
+                           <Font size="14.0" />
+                        </font>
+                     </Label>
+                     <Circle fx:id="opponent1Turn" fill="GREY" radius="8.0" stroke="BLACK" strokeType="INSIDE" />
+                  </children>
+               </HBox>
+               <FlowPane fx:id="opponent1HandPane" alignment="CENTER" prefHeight="80.0" hgap="5.0" vgap="5.0" />
+            </children>
+         </VBox>
+         
+         <VBox fx:id="opponent2Container" alignment="CENTER" spacing="5.0">
+            <children>
+               <HBox alignment="CENTER" spacing="10.0">
+                  <children>
+                     <Label fx:id="opponent2Label" text="Opponent 2" textFill="WHITE">
+                        <font>
+                           <Font size="14.0" />
+                        </font>
+                     </Label>
+                     <Circle fx:id="opponent2Turn" fill="GREY" radius="8.0" stroke="BLACK" strokeType="INSIDE" />
+                  </children>
+               </HBox>
+               <FlowPane fx:id="opponent2HandPane" alignment="CENTER" prefHeight="80.0" hgap="5.0" vgap="5.0" />
+            </children>
+         </VBox>
+         
+         <VBox fx:id="opponent3Container" alignment="CENTER" spacing="5.0">
+            <children>
+               <HBox alignment="CENTER" spacing="10.0">
+                  <children>
+                     <Label fx:id="opponent3Label" text="Opponent 3" textFill="WHITE">
+                        <font>
+                           <Font size="14.0" />
+                        </font>
+                     </Label>
+                     <Circle fx:id="opponent3Turn" fill="GREY" radius="8.0" stroke="BLACK" strokeType="INSIDE" />
+                  </children>
+               </HBox>
+               <FlowPane fx:id="opponent3HandPane" alignment="CENTER" prefHeight="80.0" hgap="5.0" vgap="5.0" />
+            </children>
+         </VBox>
+      </children>
+   </HBox>
+   
+   <!-- Game Board (Center) -->
+   <StackPane AnchorPane.topAnchor="180.0" AnchorPane.bottomAnchor="150.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0">
+      <children>
+         <VBox alignment="CENTER" spacing="20.0">
+            <children>
+               <StackPane fx:id="discardPilePane" alignment="CENTER" prefHeight="120.0" prefWidth="90.0" />
+               <Label fx:id="gameStateLabel" text="" textFill="WHITE" wrapText="true">
+                  <font>
+                     <Font size="16.0" />
+                  </font>
+               </Label>
+               <!-- Wild Color Selection Buttons -->
+               <HBox fx:id="colorSelectionPane" alignment="CENTER" spacing="20.0" visible="false">
+                  <children>
+                     <Button mnemonicParsing="false" onAction="#selectRedColor" prefHeight="40.0" prefWidth="80.0" style="-fx-background-color: red;" text="Red" textFill="WHITE" />
+                     <Button mnemonicParsing="false" onAction="#selectBlueColor" prefHeight="40.0" prefWidth="80.0" style="-fx-background-color: blue;" text="Blue" textFill="WHITE" />
+                     <Button mnemonicParsing="false" onAction="#selectGreenColor" prefHeight="40.0" prefWidth="80.0" style="-fx-background-color: green;" text="Green" textFill="WHITE" />
+                     <Button mnemonicParsing="false" onAction="#selectYellowColor" prefHeight="40.0" prefWidth="80.0" style="-fx-background-color: #FFC107;" text="Yellow" textFill="BLACK" />
+                  </children>
+               </HBox>
+            </children>
+         </VBox>
+      </children>
+   </StackPane>
+   
+   <!-- Player Cards (Bottom) -->
+   <VBox alignment="CENTER" spacing="10.0" AnchorPane.bottomAnchor="60.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0">
+      <children>
+         <HBox alignment="CENTER" spacing="10.0">
+            <children>
+               <Label fx:id="playerLabel" text="You" textFill="WHITE">
+                  <font>
+                     <Font size="14.0" />
+                  </font>
+               </Label>
+               <Circle fx:id="playerTurn" fill="GREY" radius="8.0" stroke="BLACK" strokeType="INSIDE" />
+            </children>
+         </HBox>
+         <FlowPane fx:id="playerHandPane" alignment="CENTER" prefHeight="120.0" hgap="5.0" vgap="5.0">
+            <padding>
+                <Insets top="10.0" right="10.0" bottom="10.0" left="10.0" />
+            </padding>
+         </FlowPane>
+      </children>
+   </VBox>
+   
+   <!-- Action Buttons (Bottom) -->
+   <HBox alignment="CENTER" spacing="10.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0">
+      <children>
+         <Button fx:id="drawCardButton" mnemonicParsing="false" onAction="#handleDrawCardAction" prefHeight="40.0" prefWidth="120.0" style="-fx-background-color: #0074D9; -fx-background-radius: 5;" text="Draw Card" textFill="WHITE">
+            <font>
+               <Font size="14.0" />
+            </font>
+         </Button>
+         <Button fx:id="unoButton" mnemonicParsing="false" onAction="#handleUnoButtonAction" prefHeight="40.0" prefWidth="120.0" style="-fx-background-color: #FF4136; -fx-background-radius: 5;" text="UNO!" textFill="WHITE">
+            <font>
+               <Font size="14.0" />
+            </font>
+         </Button>
+         <Button fx:id="challengeButton" mnemonicParsing="false" prefHeight="40.0" prefWidth="120.0" style="-fx-background-color: #FF851B; -fx-background-radius: 5;" text="Challenge" textFill="WHITE">
+            <font>
+               <Font size="14.0" />
+            </font>
+         </Button>
+         <Button mnemonicParsing="false" onAction="#handleBackToMenu" prefHeight="40.0" prefWidth="120.0" style="-fx-background-color: #B10DC9; -fx-background-radius: 5;" text="Leave Game" textFill="WHITE">
+            <font>
+               <Font size="14.0" />
+            </font>
+         </Button>
+      </children>
+   </HBox>
+</AnchorPane>
